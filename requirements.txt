@@ -1,0 +1,14 @@
+flask-mail
+trafilatura
+transformers
+torch
+sumy
+deep-translator
+vaderSentiment
+gTTS
+psycopg2-binary
+requests
+beautifulsoup4
+newspaper3k
+lxml
+nltk

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4" data-aos="fade-right">
+    <h3 class="fw-bold mb-0">🔖 Saved Bookmarks</h3>
+    <a href="/news" class="btn btn-sm btn-outline-primary">← Back to News</a>
+</div>
+
+{% if bookmarks %}
+<div class="row g-4" id="bookmarksContainer">
+    {% for b in bookmarks %}
+    <div class="col-md-4 col-lg-3" id="bm-card-{{ b.id }}" data-aos="fade-up">
+        <div class="news-card h-100">
+            <div class="news-img">
+                <img src="{{ b.image_url or url_for('static', filename='img/news_placeholder.jpg') }}"
+                     onerror="handleImgError(this)" loading="lazy">
+            </div>
+            <div class="news-body">
+                <h6 class="news-title">{{ b.title[:80] }}{% if b.title|length > 80 %}...{% endif %}</h6>
+                <div class="news-meta mb-2">
+                    {% if b.source_name %}<span>📡 {{ b.source_name }}</span>{% endif %}
+                    <span>📅 {{ b.date }}</span>
+                </div>
+                <div class="d-flex gap-2 mt-2">
+                    <a href="{{ b.url }}" target="_blank" class="btn btn-sm btn-outline-primary flex-fill">🌐 Read</a>
+                    <button class="btn btn-sm btn-outline-danger"
+                            onclick="removeBookmark({{ b.id }}, '{{ b.url|e }}')">🗑</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-5 card-box" data-aos="fade-up">
+    <div style="font-size:4rem; margin-bottom:16px;">🔖</div>
+    <h4 class="fw-bold text-muted">No Bookmarks Yet</h4>
+    <p class="text-muted">Browse <a href="/news" class="fw-semibold">Latest News</a> and click the 🔖 icon to save articles here.</p>
+</div>
+{% endif %}
+
+<script>
+function removeBookmark(bookmarkId, url) {
+    if (!confirm('Remove this bookmark?')) return;
+    fetch('/api/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.bookmarked) {
+            const card = document.getElementById('bm-card-' + bookmarkId);
+            if (card) {
+                card.style.opacity = '0';
+                card.style.transform = 'scale(0.8)';
+                card.style.transition = '0.3s';
+                setTimeout(() => card.remove(), 300);
+            }
+            showToast('🗑 Bookmark removed.', 'success', 2000);
+        }
+    })
+    .catch(() => showToast('❌ Error removing bookmark.', 'error'));
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="text-center mb-4">
+    <h3 class="fw-bold">📰 Latest News</h3>
+    <p class="text-muted">Real-time headlines powered by News API</p>
+</div>
+
+<!-- SEARCH BAR -->
+<div class="d-flex justify-content-center mb-3">
+    <div class="input-group" style="max-width:500px;">
+        <input type="text" class="form-control" id="newsSearchInput" placeholder="🔍 Search news by keyword..." onkeyup="filterNewsByKeyword()">
+    </div>
+</div>
+
+<!-- CATEGORY FILTER -->
+<div class="d-flex justify-content-center gap-2 mb-4 flex-wrap" id="categoryBar">
+    {% for cat in ["general","business","sports","technology","health","entertainment"] %}
+        <button
+            class="btn btn-sm category-btn {% if current_category == cat %}btn-primary{% else %}btn-outline-primary{% endif %}"
+            data-category="{{ cat }}"
+            onclick="changeCategory('{{ cat }}')">
+            {{ cat.capitalize() }}
+        </button>
+    {% endfor %}
+</div>
+
+{% if news_list %}
+
+<!-- SUMMARY MODAL -->
+<div class="modal fade" id="summaryModal" tabindex="-1">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+
+      <div class="modal-header d-flex align-items-center">
+        <h5 class="modal-title me-3" id="modalTitle">News Summary</h5>
+
+        <select id="modalLang"
+                class="form-select w-auto"
+                onchange="changeSummaryLanguage()">
+            <option value="" selected disabled>Select Language</option>
+            <option value="en">English</option>
+            <option value="gu">Gujarati</option>
+            <option value="hi">Hindi</option>
+            <option value="ta">Tamil</option>
+            <option value="mr">Marathi</option>
+            <option value="bn">Bengali</option>
+            <option value="kn">Kannada</option>
+            <option value="te">Telugu</option>
+            <option value="ur">Urdu</option>
+        </select>
+
+        <button type="button"
+                class="btn-close ms-3"
+                data-bs-dismiss="modal"></button>
+      </div>
+
+<div class="modal-body">
+
+<!-- TEXT TO SPEECH -->
+<div class="d-flex gap-2 mb-3">
+
+    <button class="btn btn-sm btn-outline-success" onclick="speakSummary()">
+        🔊 Listen Summary
+    </button>
+
+    <button class="btn btn-sm btn-outline-danger" onclick="stopSpeech()">
+        ⏹ Stop
+    </button>
+
+    <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('modalSummary')">
+        📋 Copy Summary
+    </button>
+
+</div>
+
+
+<h6 class="fw-bold mb-2">🧠 AI Summary</h6>
+
+<p id="modalSummary" class="mb-4 text-muted">
+    Generating summary...
+</p>
+
+<hr>
+
+<h6 class="fw-bold mb-2">📰 Full News</h6>
+
+<div id="modalFullNews" style="white-space: pre-line; font-size: 0.95rem;">
+    Loading full news...
+</div>
+
+
+<!-- OPEN ORIGINAL NEWS BUTTON -->
+<div class="text-center mt-3">
+
+    <a id="openOriginalBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+
+        🌐 Open Original News
+
+    </a>
+
+</div>
+
+</div>
+
+</div>
+</div>
+</div>
+
+
+<!-- NEWS CARDS -->
+<div class="row g-4" id="newsContainer">
+
+{% for news in news_list %}
+
+<div class="col-md-4 col-lg-3" style="position:relative;">
+
+<div class="news-card h-100"
+data-url="{{ news.url }}"
+data-title="{{ news.title|e }}">
+
+<!-- Bookmark Button Overlay -->
+<button class="bookmark-btn"
+        data-url="{{ news.url|e }}"
+        data-title="{{ news.title|e }}"
+        data-image="{{ news.urlToImage or '' }}"
+        data-source="{{ news.source.name if news.source else '' }}"
+        onclick="event.stopPropagation(); toggleBookmark(this)"
+        title="Bookmark">
+  🔖
+</button>
+
+<div class="news-img">
+
+<img
+src="{{ news.urlToImage if news.urlToImage else url_for('static', filename='img/news_placeholder.jpg') }}"
+onerror="handleImgError(this)"
+loading="lazy">
+
+</div>
+
+<div class="news-body">
+
+<h6 class="news-title">{{ news.title }}</h6>
+
+{% if news.description %}
+<p class="text-muted small mb-2" style="font-size:0.78rem; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+    {{ news.description[:120] }}{% if news.description|length > 120 %}...{% endif %}
+</p>
+{% endif %}
+
+<div class="news-meta mb-2">
+
+<span>{{ news.source.name if news.source }}</span>
+
+<span>{{ news.publishedAt[:10] }}</span>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+
+<!-- LOAD MORE -->
+<div class="text-center mt-4">
+<button id="loadMoreBtn" class="btn btn-outline-primary">
+Load More News
+</button>
+</div>
+
+
+{% else %}
+
+<p class="text-muted text-center">No news available right now.</p>
+
+{% endif %}
+
+<!-- SEARCH FILTER SCRIPT -->
+<script>
+function filterNewsByKeyword() {
+    const query = document.getElementById("newsSearchInput").value.toLowerCase();
+    const cards = document.querySelectorAll("#newsContainer .col-md-4");
+    cards.forEach(card => {
+        const title = (card.querySelector(".news-title") || {}).innerText || "";
+        const desc = (card.querySelector(".text-muted.small") || {}).innerText || "";
+        if (title.toLowerCase().includes(query) || desc.toLowerCase().includes(query)) {
+            card.style.display = "";
+        } else {
+            card.style.display = "none";
+        }
+    });
+}
+
+// Bookmark toggle for Latest News cards
+function toggleBookmark(btn) {
+    const url = btn.dataset.url;
+    const title = btn.dataset.title;
+    const imageUrl = btn.dataset.image;
+    const sourceName = btn.dataset.source;
+
+    fetch('/api/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, title, image_url: imageUrl, source_name: sourceName })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.bookmarked) {
+            btn.style.color = '#f59e0b';
+            btn.style.transform = 'scale(1.3)';
+            setTimeout(() => btn.style.transform = 'scale(1)', 200);
+            showToast('🔖 Bookmarked!', 'success', 2000);
+        } else {
+            btn.style.color = '';
+            showToast('🗑 Bookmark removed.', 'info', 2000);
+        }
+    })
+    .catch(() => showToast('❌ Bookmark error.', 'error'));
+}
+</script>
+
+{% endblock %}

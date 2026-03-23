@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+{% block content %}
+
+<style>
+
+  .analytics-title{
+    font-weight:700;
+    letter-spacing:0.5px;
+    color:#ffffff;
+  }
+
+  /* CARD STYLE */
+  .analytics-card{
+    background: linear-gradient(145deg,#020617,#0f172a);
+    border-radius:18px;
+    padding:22px;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4);
+    height:100%;
+    color:white;
+  }
+.analytics-card:hover{
+ transform:translateY(-4px);
+ transition:0.3s;
+}
+  .chart-box{
+    position:relative;
+    height:320px;
+  }
+
+  /* FILTER BOX */
+  .filter-box{
+    background:#0f172a;
+    padding:12px 18px;
+    border-radius:14px;
+    box-shadow:0 6px 18px rgba(0,0,0,0.3);
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    color:white;
+  }
+
+  .filter-box select{
+    background:#020617;
+    color:white;
+    border:1px solid #1e293b;
+  }
+
+  .list-group-item a{
+    color:#60a5fa;
+  }
+
+  .list-group-item a:hover{
+    color:#93c5fd;
+  }
+
+</style>
+
+<!-- ================= HEADER ================= -->
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+
+  <h3 class="analytics-title">📊 Analytics Dashboard</h3>
+
+  <form method="get" class="filter-box">
+
+    <span class="fw-bold">📅 View</span>
+
+    <select name="period" class="form-select form-select-sm" onchange="this.form.submit()">
+
+      <option value="day" {% if period=='day' %}selected{% endif %}>Day</option>
+      <option value="month" {% if period=='month' %}selected{% endif %}>Month</option>
+      <option value="year" {% if period=='year' %}selected{% endif %}>Year</option>
+
+    </select>
+
+  </form>
+
+</div>
+
+
+
+<!-- ================= ROW 1 ================= -->
+
+<div class="row g-4">
+
+  <div class="col-lg-6">
+
+    <div class="analytics-card">
+
+      <h5 class="mb-3">🌐 Language Usage</h5>
+
+      <div class="chart-box">
+        <canvas id="languageChart"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="col-lg-6">
+
+    <div class="analytics-card">
+
+      <h5 class="mb-3">📏 Summary Length Preference</h5>
+
+      <div class="chart-box">
+        <canvas id="lengthChart"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+<!-- ================= ROW 2 ================= -->
+
+<div class="row g-4 mt-1">
+
+  <div class="col-lg-6">
+
+    <div class="analytics-card">
+
+      <h5 class="mb-3">😊 Sentiment Distribution</h5>
+
+      <div class="chart-box">
+        <canvas id="sentimentChart"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="col-lg-6">
+
+    <div class="analytics-card">
+
+      <h5 class="mb-3">⏱ Activity ({{period|capitalize}})</h5>
+
+      <div class="chart-box">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+
+
+
+
+<!-- ================= RATING STAT CARD ================= -->
+<div class="row g-4 mt-1">
+  <div class="col-lg-6">
+    <div class="analytics-card d-flex align-items-center gap-4">
+      <div style="font-size:3rem;">⭐</div>
+      <div>
+        <h5 class="mb-1">Average Summary Rating</h5>
+        <h2 class="fw-bold mb-0" style="color:#f59e0b;">{{ avg_rating if avg_rating else '—' }}<small style="font-size:1rem; color:#94a3b8;"> / 5</small></h2>
+        <p class="text-muted small mb-0">Based on your ratings</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+<script>
+
+  const isDarkMode = document.body.classList.contains("dark-mode");
+  const gridColor = isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)";
+  const tickColor = isDarkMode ? "#94a3b8" : "#64748b";
+  const legendColor = isDarkMode ? "#e5e7eb" : "#374151";
+
+  const langLabels = {{ lang_labels| tojson}};
+  const langCounts = {{ lang_counts| tojson}};
+
+  const lenLabels = {{ len_labels| tojson}};
+  const lenCounts = {{ len_counts| tojson}};
+
+  const sentLabels = {{ sent_labels| tojson}};
+  const sentCounts = {{ sent_counts| tojson}};
+
+  const actLabels = {{ act_labels| tojson}};
+  const actCounts = {{ act_counts| tojson}};
+
+
+  // 🌐 Language Chart
+
+  new Chart(
+    document.getElementById("languageChart"),
+    {
+      type: "pie",
+      data: {
+        labels: langLabels,
+        datasets: [{
+          data: langCounts,
+          backgroundColor: ["#4F46E5", "#22C55E", "#F97316", "#EC4899", "#06B6D4", "#8B5CF6", "#EF4444", "#14B8A6", "#F59E0B"]
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { labels: { color: legendColor } }
+        }
+      }
+    }
+  );
+
+
+  // 📏 Length Chart
+
+  new Chart(
+    document.getElementById("lengthChart"),
+    {
+      type: "bar",
+      data: {
+        labels: lenLabels,
+        datasets: [{
+          data: lenCounts,
+          backgroundColor: ["#38BDF8", "#818CF8", "#FB923C"]
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+          x: { grid: { color: gridColor }, ticks: { color: tickColor } }
+        }
+      }
+    }
+  );
+
+
+  // 😊 Sentiment Chart
+
+  new Chart(
+    document.getElementById("sentimentChart"),
+    {
+      type: "pie",
+      data: {
+        labels: sentLabels,
+        datasets: [{
+          data: sentCounts,
+          backgroundColor: ["#22C55E", "#FCD34D", "#EF4444"]
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { labels: { color: legendColor } }
+        }
+      }
+    }
+  );
+
+
+  // ⏱ Activity Chart
+
+  new Chart(
+    document.getElementById("weeklyChart"),
+    {
+      type: "line",
+      data: {
+        labels: actLabels,
+        datasets: [{
+          data: actCounts,
+          borderColor: "#3B82F6",
+          backgroundColor: "rgba(59,130,246,0.12)",
+          fill: true,
+          tension: 0.4,
+          pointBackgroundColor: "#3B82F6"
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: tickColor } },
+          x: { grid: { color: gridColor }, ticks: { color: tickColor } }
+        }
+      }
+    }
+  );
+
+</script>
+
+{% endblock %}

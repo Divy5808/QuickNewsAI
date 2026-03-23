@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h3 class="fw-bold mb-0">📰 {{ record[0] }}</h3>
+        {% if category %}
+        <span class="badge rounded-pill mt-1" style="background:linear-gradient(135deg,#6366f1,#8b5cf6); font-size:0.78rem;">
+            🏷️ {{ category }}
+        </span>
+        {% endif %}
+    </div>
+    <a href="/history" class="btn btn-outline-secondary btn-sm">⬅ Back to History</a>
+</div>
+
+<!-- AI SUMMARY -->
+<div class="card-box" data-aos="fade-up">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">🧠 AI Summary</h5>
+        <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('vhSummary')" title="Copy">📋 Copy</button>
+            <button class="btn btn-sm btn-outline-primary"
+                    onclick="exportToPDF('{{ record[0]|e }}', 'vhSummary', 'vhFullNews')"
+                    title="PDF">📤 PDF</button>
+        </div>
+    </div>
+
+    <p id="vhSummary" class="news-content">{{ record[1] }}</p>
+
+    <!-- ⭐ STAR RATING -->
+    <div class="mt-3 pt-3" style="border-top:1px solid rgba(0,0,0,0.08);">
+        <p class="fw-semibold mb-2" style="font-size:0.9rem;">⭐ Rate this summary:</p>
+        <div class="star-rating d-flex gap-2" id="starRating">
+            {% for i in range(1, 6) %}
+            <span class="star-icon"
+                  id="star-{{ i }}"
+                  data-value="{{ i }}"
+                  onclick="submitRating({{ i }})"
+                  style="font-size:1.8rem; cursor:pointer; transition:transform 0.15s; color:{{ '#f59e0b' if user_rating and i <= user_rating else '#d1d5db' }};">
+                ★
+            </span>
+            {% endfor %}
+        </div>
+        <p id="ratingFeedback" class="text-muted small mt-1">
+            {% if user_rating %}You rated this {{ user_rating }}/5{% else %}Click a star to rate{% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- RE-SUMMARIZE -->
+<div class="card-box mt-3" data-aos="fade-up">
+    <h5 class="fw-bold mb-3">🔄 Re-Summarize</h5>
+    <div class="row g-2 align-items-end">
+        <div class="col-sm-4">
+            <label class="fw-bold small">🌐 Language</label>
+            <select id="resLang" class="form-select form-select-sm">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="gu">Gujarati</option>
+                <option value="ta">Tamil</option>
+                <option value="mr">Marathi</option>
+                <option value="bn">Bengali</option>
+                <option value="kn">Kannada</option>
+                <option value="te">Telugu</option>
+                <option value="ur">Urdu</option>
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <label class="fw-bold small">✂️ Length</label>
+            <select id="resLength" class="form-select form-select-sm">
+                <option value="short">Short</option>
+                <option value="medium" selected>Medium</option>
+                <option value="long">Long</option>
+            </select>
+        </div>
+        <div class="col-sm-4">
+            <button class="btn btn-primary btn-sm w-100" onclick="doResummarize()">🔄 Re-Summarize</button>
+        </div>
+    </div>
+    <div id="resResult" class="mt-3" style="display:none;">
+        <h6 class="fw-bold">📝 New Summary:</h6>
+        <p id="resText" class="news-content"></p>
+    </div>
+</div>
+
+<!-- FULL NEWS -->
+<div class="card-box mt-4" data-aos="fade-up">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <h5 class="mb-0">📰 Full News</h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('vhFullNews')">📋 Copy</button>
+    </div>
+
+    <p id="vhFullNews" class="news-content">{{ record[2] }}</p>
+
+    <a href="/open_news?url={{ record[3] | urlencode }}&title={{ record[0] | urlencode }}"
+       target="_blank" class="btn btn-primary mt-3">
+        🌐 Open Original News
+    </a>
+</div>
+
+<script>
+const newsId = {{ news_id }};
+
+// ⭐ Star hover
+document.querySelectorAll('.star-icon').forEach(star => {
+    star.addEventListener('mouseover', function() {
+        const val = parseInt(this.dataset.value);
+        document.querySelectorAll('.star-icon').forEach((s, idx) => {
+            s.style.color = (idx + 1) <= val ? '#f59e0b' : '#d1d5db';
+            s.style.transform = (idx + 1) <= val ? 'scale(1.2)' : 'scale(1)';
+        });
+    });
+    star.addEventListener('mouseout', function() {
+        const saved = parseInt('{{ user_rating or 0 }}');
+        document.querySelectorAll('.star-icon').forEach((s, idx) => {
+            s.style.color = (idx + 1) <= saved ? '#f59e0b' : '#d1d5db';
+            s.style.transform = 'scale(1)';
+        });
+    });
+});
+
+function submitRating(value) {
+    fetch('/api/rate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ summary_id: newsId, rating: value })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            document.getElementById('ratingFeedback').textContent = `You rated this ${value}/5 ✓`;
+            document.querySelectorAll('.star-icon').forEach((s, idx) => {
+                s.style.color = (idx + 1) <= value ? '#f59e0b' : '#d1d5db';
+            });
+            showToast(`⭐ Rated ${value}/5!`, 'success', 2000);
+        }
+    })
+    .catch(() => showToast('❌ Failed to save rating.', 'error'));
+}
+
+function doResummarize() {
+    const lang = document.getElementById('resLang').value;
+    const length = document.getElementById('resLength').value;
+    const btn = document.querySelector('[onclick="doResummarize()"]');
+    btn.disabled = true; btn.textContent = '⏳ Re-summarizing...';
+
+    fetch('/api/resummarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ news_id: newsId, language: lang, length: length })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.summary) {
+            document.getElementById('resText').textContent = data.summary;
+            document.getElementById('resResult').style.display = '';
+            showToast('🔄 Re-summarized!', 'success', 2000);
+        } else {
+            showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    })
+    .catch(() => showToast('❌ Error re-summarizing.', 'error'))
+    .finally(() => { btn.disabled = false; btn.textContent = '🔄 Re-Summarize'; });
+}
+</script>
+
+{% endblock %}

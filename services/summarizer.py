@@ -1,0 +1,66 @@
+# ==========================================
+# 🔥 LIGHT + RELIABLE SUMMARIZER (NO PIPELINE ERRORS)
+# ==========================================
+
+import os
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+
+# Using the newly trained local qnai_model
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+MODEL_NAME = os.path.join(BASE_DIR, "qnai_model")
+
+tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+
+def summarize_text(text, summary_length=150):
+    if not text or len(text.strip()) < 200:
+        return "Summary not available."
+
+    text = text.replace("\n", " ").strip()
+
+    # Adjust length based on slider
+    if summary_length <= 100:        # SHORT
+        text = text[:1500]           # increased from 800
+        max_len = 65
+        min_len = 30
+
+    elif summary_length >= 200:      # LONG
+        text = text[:4000]           # increased from 2500
+        max_len = 250
+        min_len = 100
+
+    else:                            # MEDIUM
+        text = text[:2800]           # increased from 1500
+        max_len = 160
+        min_len = 60
+
+    try:
+        inputs = tokenizer(
+            text,
+            return_tensors="pt",
+            truncation=True,
+            max_length=1024
+        )
+
+        input_length = inputs["input_ids"].shape[1]
+        
+        # Dynamically scale lengths to prevent the model from generating more tokens than the input length
+        actual_min_len = min(min_len, max(10, input_length // 3))
+        actual_max_len = min(max_len, max(20, int(input_length * 0.8)))
+
+        output_ids = model.generate(
+            **inputs,
+            max_length=actual_max_len,
+            min_length=actual_min_len,
+            num_beams=4,
+            no_repeat_ngram_size=3,
+            length_penalty=2.0,
+            early_stopping=True
+        )
+
+        summary = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+        return summary
+
+    except Exception as e:
+        print("SUMMARY ERROR:", e)
+        return text[:300] + "..."

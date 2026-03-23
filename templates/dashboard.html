@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- WELCOME GREETING -->
+<div class="text-center mb-4">
+    <h2 class="fw-bold">Welcome back, {{ user_name }}! 👋</h2>
+    <p class="text-muted">AI-Based Multilingual News Summarization System</p>
+</div>
+
+<!-- QUICK STATS ROW -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4">
+    <div class="card-box text-center h-100 py-3">
+      <div class="fs-3 mb-1">🤖</div>
+      <h6 class="text-muted small mb-1">Total Summaries</h6>
+      <h4 class="fw-bold mb-0 text-primary">{{ stats.total_summaries }}</h4>
+    </div>
+  </div>
+  <div class="col-6 col-md-4">
+    <div class="card-box text-center h-100 py-3">
+      <div class="fs-3 mb-1">🌐</div>
+      <h6 class="text-muted small mb-1">Favorite Lang</h6>
+      <h4 class="fw-bold mb-0 text-success" style="font-size:1.1rem;">{{ stats.favorite_language }}</h4>
+    </div>
+  </div>
+  <div class="col-md-4 d-none d-md-block">
+    <div class="card-box text-center h-100 py-3">
+      <div class="fs-3 mb-1">🕒</div>
+      <h6 class="text-muted small mb-1">Last Active</h6>
+      <h4 class="fw-bold mb-0 text-secondary" style="font-size:0.9rem;">{{ stats.last_active }}</h4>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- SUMMARIZATION FORM -->
+<div class="card-box">
+<h5 class="fw-bold mb-3">🧠 Generate Summary</h5>
+<form method="POST" onsubmit="showLoading(); return true;">
+
+    <label class="fw-bold">🔗 News URL</label>
+    <input type="url" class="form-control mb-3" name="news_url" placeholder="Paste any news article URL..." required autofocus>
+
+    <div class="row g-3">
+        <div class="col-sm-6">
+            <label class="fw-bold">🌐 Language</label>
+            <select name="language" id="dashboardLang" class="form-select">
+                <option value="en">English</option>
+                <option value="hi">Hindi</option>
+                <option value="gu">Gujarati</option>
+                <option value="ta">Tamil</option>
+                <option value="mr">Marathi</option>
+                <option value="bn">Bengali</option>
+                <option value="kn">Kannada</option>
+                <option value="te">Telugu</option>
+                <option value="ur">Urdu</option>
+            </select>
+        </div>
+        <div class="col-sm-6">
+            <label class="fw-bold">
+                ✂ Summary Length:
+                <span id="lengthLabel">Medium</span>
+            </label>
+            <input type="range" class="form-range" min="1" max="3" value="2" id="summaryRange">
+            <input type="hidden" name="summary_length" id="summaryLengthValue" value="medium">
+        </div>
+    </div>
+
+    <button class="btn btn-primary w-100 mt-3">
+        🚀 Generate Summary
+    </button>
+</form>
+</div>
+
+{% if summary %}
+<div id="exportArea">
+    <div class="card-box mt-4">
+    
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">🧠 AI Summary</h5>
+        <div class="d-flex gap-2 no-export">
+          <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('dashboardSummary')" title="Copy Summary">📋 Copy</button>
+          <button class="btn btn-sm btn-outline-primary" onclick="exportToPDF('{{ summary_title|default('News Summary')|e }}', 'exportArea')" title="Download PDF">📤 PDF</button>
+        </div>
+      </div>
+    
+      <hr class="mt-2 mb-3">
+    
+      <span class="badge bg-info">⏱ {{ read_time }}</span>
+      <span class="badge 
+        {% if sentiment.label == 'Positive' %} bg-success
+        {% elif sentiment.label == 'Negative' %} bg-danger
+        {% else %} bg-secondary {% endif %}">
+        {{ sentiment.emoji }} {{ sentiment.label }}
+      </span>
+    
+      <p id="dashboardSummary" class="news-content mt-3">
+        {{ summary }}
+      </p>
+    
+    </div>
+    
+    {% if full_news %}
+    <div class="card-box mt-4">
+        <div class="d-flex justify-content-between">
+            <h5>📰 Full News</h5>
+            <div class="d-flex gap-2 no-export">
+                <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('fullNewsBox')">📋 Copy</button>
+                <button class="btn btn-sm btn-outline-primary" onclick="toggleNews()">Show / Hide</button>
+            </div>
+        </div>
+        <div id="fullNewsBox" class="news-content mt-3">
+            {{ full_news }}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+<!-- QUICK RECAP (Recent History) -->
+{% if recent_history %}
+<div class="mt-5 mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0">📜 Quick Recap</h5>
+        <a href="/history" class="text-decoration-none small">View All →</a>
+    </div>
+    <div class="row g-3">
+        {% for h in recent_history %}
+        <div class="col-md-4">
+            <a href="/history/{{ h.id }}" class="text-decoration-none">
+                <div class="card-box h-100 p-3 hover-lift border-0 shadow-sm">
+                    <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ h.title }}">{{ h.title }}</h6>
+                    <div class="d-flex gap-2 align-items-center mt-2">
+                        <span class="badge bg-primary-subtle text-primary border-0 small px-2">{{ h.language|upper }}</span>
+                        <span class="text-muted" style="font-size: 0.75rem;">{{ h.date }}</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 rounded-4">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold text-primary">Verify Email</h2>
+                    <p class="text-muted">Enter the 6-digit code sent to <strong>{{ email }}</strong></p>
+                </div>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <form method="POST">
+                    <input type="hidden" name="email" value="{{ email }}">
+                    <div class="mb-4">
+                        <label for="otp" class="form-label fw-semibold">OTP Code</label>
+                        <input type="text" name="otp" id="otp" class="form-control form-control-lg text-center letter-spacing-lg" 
+                               maxlength="6" placeholder="000000" required autofocus>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-3">Verify Account</button>
+                    </div>
+                </form>
+
+                <div class="text-center mt-4">
+                    <p class="mb-0">Didn't receive code? <a href="{{ url_for('login') }}" class="text-decoration-none text-primary fw-bold">Try again</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .letter-spacing-lg {
+        letter-spacing: 0.5rem;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
