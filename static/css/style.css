@@ -4,19 +4,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
 :root{
-    --primary:#2563eb;
-    --primary-dark:#1e40af;
-    --accent:#22c55e;
-    --bg1:#f8fafc;
-    --bg2:#eef2ff;
-    --text-dark:#1f2937;
-    --text-muted:#6b7280;
+    --primary: #2563eb;
+    --primary-dark: #1e40af;
+    --accent: #22c55e;
+    --bg1: #f8fafc;
+    --bg2: #eef2ff;
+    --text-dark: #1f2937;
+    --text-muted: #64748b;
+    --border-light: rgba(0,0,0,0.08);
+    
+    /* Variable backgrounds/colors */
+    --card-bg: rgba(255, 255, 255, 0.9);
+    --card-text: #1f2937;
+    --card-border: rgba(0,0,0,0.05);
 
     /* ===== DARK MODE COLORS ===== */
-    --dark-bg:#0f172a;
-    --dark-card:#111827;
-    --dark-text:#e5e7eb;
-    --dark-muted:#9ca3af;
+    --dark-bg: #0b1220;
+    --dark-surface: #111827;
+    --dark-card: #1e293b;
+    --dark-text: #f3f4f6;
+    --dark-muted: #9ca3af;
+    --dark-border: rgba(255,255,255,0.12);
+}
+
+.dark-mode {
+    --card-bg: rgba(30, 41, 59, 0.85); /* Deep slate glass */
+    --card-text: #f3f4f6;
+    --card-border: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -39,103 +53,128 @@ body{
 }
 
 /* ===============================
-   DARK MODE GLOBAL
+   DARK MODE GLOBAL OVERRIDES
 ================================ */
-body.dark-mode{
-    background:
-      radial-gradient(circle at top left,#0b1220,transparent 40%),
-      radial-gradient(circle at bottom right,#020617,transparent 40%),
-      linear-gradient(135deg,#0b1220,#020617);
-    color:var(--dark-text);
+.dark-mode body{
+    background: 
+      radial-gradient(circle at top left, #0f172a, transparent 50%),
+      radial-gradient(circle at bottom right, #020617, transparent 50%),
+      var(--dark-bg);
+    color: var(--dark-text);
 }
 
-/* =========================================
-   🔥 FIX: MAKE EVERYTHING DARK IN DARK MODE
-========================================= */
+.dark-mode .container { background: transparent !important; }
 
-/* ---- Analytics cards dark ---- */
-.dark-mode .analytics-card {
-  background: rgba(17, 24, 39, 0.85);
-  color: #e5e7eb;
-  border: 1px solid rgba(255,255,255,0.12);
+/* Text colors fix */
+.dark-mode h1, 
+.dark-mode h2, 
+.dark-mode h3, 
+.dark-mode h4, 
+.dark-mode h5, 
+.dark-mode h6, 
+.dark-mode .news-title {
+    color: var(--dark-text);
 }
 
-/* Chart background dark */
-.dark-mode .chart-box canvas {
-  background: transparent;
+.dark-mode .text-muted, 
+.dark-mode .news-meta {
+    color: var(--dark-muted) !important;
 }
 
-/* ---- Analytics page white boxes fix ---- */
-.dark-mode .analytics-card,
-.dark-mode .filter-box {
-  background: rgba(17, 24, 39, 0.9);
-  color: #e5e7eb;
+/* Forms & Selects */
+.dark-mode input.form-control,
+.dark-mode select.form-select,
+.dark-mode textarea.form-control {
+    background-color: var(--dark-surface) !important;
+    border-color: var(--dark-border) !important;
+    color: var(--dark-text) !important;
 }
 
-/* Dropdown (View Day/Month/Year) dark */
-.dark-mode select {
-  background: #020617 !important;
-  color: #e5e7eb !important;
-  border: 1px solid rgba(255,255,255,0.15);
+.dark-mode input::placeholder {
+    color: rgba(255,255,255,0.4) !important;
 }
 
-/* ---- Modal dark (Latest News popup) ---- */
+/* Modals */
 .dark-mode .modal-content {
-  background: #020617;
-  color: #e5e7eb;
+    background-color: var(--dark-surface);
+    color: var(--dark-text);
+    border: 1px solid var(--dark-border);
 }
 
-.dark-mode .modal-header {
-  border-bottom: 1px solid rgba(255,255,255,0.1);
+.dark-mode .modal-header,
+.dark-mode .modal-footer {
+    border-color: var(--dark-border);
 }
 
-.dark-mode #modalSummary {
-  background: #0b1220;
-  color: #e5e7eb;
+/* Cards */
+.news-card,
+.card-box,
+.analytics-card,
+.history-card,
+.login-card,
+.profile-card,
+.filter-box {
+    background: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    color: var(--card-text) !important;
+    backdrop-filter: blur(14px);
 }
 
-.dark-mode #modalFullNews {
-  background: #020617;
-  color: #e5e7eb;
-  border: 1px solid rgba(255,255,255,0.1);
+.dark-mode .news-card,
+.dark-mode .card-box,
+.dark-mode .analytics-card,
+.dark-mode .history-card,
+.dark-mode .login-card,
+.dark-mode .profile-card,
+.dark-mode .filter-box {
+    background: var(--card-bg) !important;
+    color: var(--card-text) !important;
 }
 
-/* ---- Buttons in dark mode ---- */
-.dark-mode .btn-outline-primary {
-  color: #93c5fd;
-  border-color: #93c5fd;
+/* Global Table Dark Mode Fix */
+.dark-mode table, 
+.dark-mode .table {
+    background-color: transparent !important;
+    color: var(--dark-text) !important;
 }
 
-.dark-mode .btn-outline-primary:hover {
-  background: #2563eb;
-  color: white;
+.dark-mode .table thead th,
+.dark-mode .table tbody td,
+.dark-mode .table tr {
+    background-color: transparent !important;
+    color: var(--dark-text) !important;
+    border-color: rgba(255,255,255,0.1) !important;
 }
 
-/* ---- Navbar dropdown & text fix ---- */
-.dark-mode .navbar .nav-link {
-  color: #e5e7eb !important;
+.dark-mode .table-hover tbody tr:hover {
+    background-color: rgba(255,255,255,0.03) !important;
 }
 
-/* ---- Container background fix ---- */
-.dark-mode .container {
-  background: transparent;
+/* Theme Toggle Button (Symbol Only) */
+.theme-toggle-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    padding: 0;
 }
 
-
-/* Text colors in dark mode */
-.dark-mode .news-title,
-.dark-mode h1,
-.dark-mode h2,
-.dark-mode h3,
-.dark-mode h4,
-.dark-mode h5,
-.dark-mode h6{
-    color:var(--dark-text);
+.theme-toggle-btn:hover {
+    background: rgba(255,255,255,0.25);
+    transform: rotate(25deg) scale(1.1);
 }
 
-.dark-mode .news-meta,
-.dark-mode .text-muted{
-    color:var(--dark-muted) !important;
+.dark-mode .theme-toggle-btn {
+    background: rgba(255,255,255,0.1);
+    color: #ffd700;
 }
 
 /* ===============================
@@ -301,22 +340,45 @@ body.dark-mode{
 }
 
 /* ===============================
-   SCROLLBAR
+   SCROLLBAR (Theme-Aware)
 ================================ */
-::-webkit-scrollbar{
-    width:6px;
+::-webkit-scrollbar {
+    width: 8px;
 }
-::-webkit-scrollbar-thumb{
-    background:#93c5fd;
-    border-radius:10px;
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(37, 99, 235, 0.2);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(37, 99, 235, 0.4);
+}
+
+.dark-mode ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* ===============================
-   ANIMATION
+   ANIMATIONS & EFFECTS
 ================================ */
-@keyframes fadeUp{
-    from{opacity:0;transform:translateY(12px);}
-    to{opacity:1;transform:none;}
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.hover-lift {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.dark-mode .hover-lift:hover {
+    box-shadow: 0 15px 35px rgba(0,0,0,0.4);
 }
 
 /* ===============================
@@ -338,68 +400,6 @@ body.dark-mode{
 
 .history-actions .btn-danger:hover {
     background: #dc2626;
-}
-
-/* ==================================================
-   🔥 BEAUTIFUL ANALYTICS DARK MODE (CLEAN LOOK)
-================================================== */
-
-/* Analytics cards – glass + soft navy */
-.dark-mode .analytics-card {
-  background: rgba(10, 18, 32, 0.85);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.35);
-}
-
-/* Card titles */
-.dark-mode .analytics-card h5 {
-  color: #e5e7eb;
-  letter-spacing: 0.3px;
-}
-
-/* Filter box (View Day/Month) */
-.dark-mode .filter-box {
-  background: rgba(10, 18, 32, 0.9);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Select dropdown */
-.dark-mode select {
-  background: #020617 !important;
-  color: #e5e7eb !important;
-  border: 1px solid rgba(255,255,255,0.12);
-}
-
-/* Grid lines softer */
-.dark-mode .chart-box canvas {
-  background: transparent;
-}
-
-/* Page background overlay (removes dirty look) */
-.dark-mode body::before {
-  background: rgba(2,6,23,0.65);
-}
-
-/* ===============================
-   FOOTER
-================================ */
-.site-footer {
-  margin-top: 40px;
-  padding: 12px 0;
-  background: var(--dark-bg);
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.footer-brand-micro {
-  font-weight: 600;
-  color: #fff;
-  font-size: 0.85rem;
-}
-
-.footer-copy-tiny {
-  font-size: 0.8rem;
-  color: #64748b;
 }
 
 .hover-white {

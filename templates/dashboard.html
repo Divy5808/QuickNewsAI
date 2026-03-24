@@ -2,10 +2,24 @@
 {% block content %}
 
 <!-- WELCOME GREETING -->
-<div class="text-center mb-4">
-    <h2 class="fw-bold">Welcome back, {{ user_name }}! 👋</h2>
+<div class="text-center mb-4" data-aos="fade-down">
+    <h2 class="fw-bold"><span id="timeGreeting">Welcome back</span>, {{ user_name }}! 👋</h2>
     <p class="text-muted">AI-Based Multilingual News Summarization System</p>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const hour = new Date().getHours();
+    let g = "Welcome back";
+    if (hour >= 5 && hour < 12) g = "Good Morning";
+    else if (hour >= 12 && hour < 17) g = "Good Afternoon";
+    else if (hour >= 17 && hour < 21) g = "Good Evening";
+    else g = "Good Night";
+    
+    const el = document.getElementById("timeGreeting");
+    if (el) el.textContent = g;
+});
+</script>
 
 <!-- QUICK STATS ROW -->
 <div class="row g-3 mb-4">
@@ -131,7 +145,7 @@
         <div class="col-md-4">
             <a href="/history/{{ h.id }}" class="text-decoration-none">
                 <div class="card-box h-100 p-3 hover-lift border-0 shadow-sm">
-                    <h6 class="fw-bold text-dark mb-1 text-truncate" title="{{ h.title }}">{{ h.title }}</h6>
+                    <h6 class="fw-bold mb-1 text-truncate" title="{{ h.title }}">{{ h.title }}</h6>
                     <div class="d-flex gap-2 align-items-center mt-2">
                         <span class="badge bg-primary-subtle text-primary border-0 small px-2">{{ h.language|upper }}</span>
                         <span class="text-muted" style="font-size: 0.75rem;">{{ h.date }}</span>

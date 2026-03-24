@@ -3,25 +3,47 @@
 
 <style>
     .admin-container {
-        max-width: 1200px;
+        max-width: 1400px;
         margin: 40px auto;
         padding: 20px;
     }
     .admin-card {
-        background: rgba(255, 255, 255, 0.9);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 20px;
-        padding: 30px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 24px;
+        padding: 32px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.06);
     }
     .dark-mode .admin-card {
-        background: rgba(15, 23, 42, 0.8);
-        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 42, 0.7);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.3);
     }
-    .table img {
-        width: 100px;
-        border-radius: 8px;
+    .table {
+        margin-top: 20px;
+        vertical-align: middle;
+        color: inherit;
+        background: transparent !important;
+    }
+    .table thead th {
+        border-bottom: 2px solid rgba(0,0,0,0.05);
+        text-transform: uppercase;
+        font-size: 0.72rem;
+        letter-spacing: 0.8px;
+        color: #64748b;
+        padding: 16px;
+    }
+    .dark-mode .table thead th {
+        border-bottom-color: rgba(255,255,255,0.05);
+        color: #94a3b8;
+    }
+    .table tbody td {
+        padding: 16px;
+        border-bottom: 1px solid rgba(0,0,0,0.03);
+    }
+    .dark-mode .table tbody td {
+        border-bottom-color: rgba(255,255,255,0.05);
     }
 </style>
 

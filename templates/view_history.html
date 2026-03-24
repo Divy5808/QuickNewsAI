@@ -13,89 +13,92 @@
     <a href="/history" class="btn btn-outline-secondary btn-sm">⬅ Back to History</a>
 </div>
 
-<!-- AI SUMMARY -->
-<div class="card-box" data-aos="fade-up">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0">🧠 AI Summary</h5>
-        <div class="d-flex gap-2">
-            <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('vhSummary')" title="Copy">📋 Copy</button>
-            <button class="btn btn-sm btn-outline-primary"
-                    onclick="exportToPDF('{{ record[0]|e }}', 'vhSummary', 'vhFullNews')"
-                    title="PDF">📤 PDF</button>
+<!-- EXPORT WRAPPER -->
+<div id="vhExportArea">
+    <!-- AI SUMMARY -->
+    <div class="card-box" data-aos="fade-up">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">🧠 AI Summary</h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('vhSummary')" title="Copy">📋 Copy</button>
+                <button class="btn btn-sm btn-outline-primary"
+                        onclick="exportToPDF('{{ record[0]|e }}', 'vhExportArea')"
+                        title="PDF">📤 PDF</button>
+            </div>
+        </div>
+
+        <p id="vhSummary" class="news-content">{{ record[1] }}</p>
+
+        <!-- ⭐ STAR RATING -->
+        <div class="mt-3 pt-3" style="border-top:1px solid rgba(0,0,0,0.08);">
+            <p class="fw-semibold mb-2" style="font-size:0.9rem;">⭐ Rate this summary:</p>
+            <div class="star-rating d-flex gap-2" id="starRating">
+                {% for i in range(1, 6) %}
+                <span class="star-icon"
+                      id="star-{{ i }}"
+                      data-value="{{ i }}"
+                      onclick="submitRating({{ i }})"
+                      style="font-size:1.8rem; cursor:pointer; transition:transform 0.15s; color:{{ '#f59e0b' if user_rating and i <= user_rating else '#d1d5db' }};">
+                    ★
+                </span>
+                {% endfor %}
+            </div>
+            <p id="ratingFeedback" class="text-muted small mt-1">
+                {% if user_rating %}You rated this {{ user_rating }}/5{% else %}Click a star to rate{% endif %}
+            </p>
         </div>
     </div>
 
-    <p id="vhSummary" class="news-content">{{ record[1] }}</p>
-
-    <!-- ⭐ STAR RATING -->
-    <div class="mt-3 pt-3" style="border-top:1px solid rgba(0,0,0,0.08);">
-        <p class="fw-semibold mb-2" style="font-size:0.9rem;">⭐ Rate this summary:</p>
-        <div class="star-rating d-flex gap-2" id="starRating">
-            {% for i in range(1, 6) %}
-            <span class="star-icon"
-                  id="star-{{ i }}"
-                  data-value="{{ i }}"
-                  onclick="submitRating({{ i }})"
-                  style="font-size:1.8rem; cursor:pointer; transition:transform 0.15s; color:{{ '#f59e0b' if user_rating and i <= user_rating else '#d1d5db' }};">
-                ★
-            </span>
-            {% endfor %}
+    <!-- RE-SUMMARIZE -->
+    <div class="card-box mt-3 no-export">
+        <h5 class="fw-bold mb-3">🔄 Re-Summarize</h5>
+        <div class="row g-2 align-items-end">
+            <div class="col-sm-4">
+                <label class="fw-bold small">🌐 Language</label>
+                <select id="resLang" class="form-select form-select-sm">
+                    <option value="en">English</option>
+                    <option value="hi">Hindi</option>
+                    <option value="gu">Gujarati</option>
+                    <option value="ta">Tamil</option>
+                    <option value="mr">Marathi</option>
+                    <option value="bn">Bengali</option>
+                    <option value="kn">Kannada</option>
+                    <option value="te">Telugu</option>
+                    <option value="ur">Urdu</option>
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <label class="fw-bold small">✂️ Length</label>
+                <select id="resLength" class="form-select form-select-sm">
+                    <option value="short">Short</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="long">Long</option>
+                </select>
+            </div>
+            <div class="col-sm-4">
+                <button class="btn btn-primary btn-sm w-100" onclick="doResummarize()">🔄 Re-Summarize</button>
+            </div>
         </div>
-        <p id="ratingFeedback" class="text-muted small mt-1">
-            {% if user_rating %}You rated this {{ user_rating }}/5{% else %}Click a star to rate{% endif %}
-        </p>
-    </div>
-</div>
-
-<!-- RE-SUMMARIZE -->
-<div class="card-box mt-3" data-aos="fade-up">
-    <h5 class="fw-bold mb-3">🔄 Re-Summarize</h5>
-    <div class="row g-2 align-items-end">
-        <div class="col-sm-4">
-            <label class="fw-bold small">🌐 Language</label>
-            <select id="resLang" class="form-select form-select-sm">
-                <option value="en">English</option>
-                <option value="hi">Hindi</option>
-                <option value="gu">Gujarati</option>
-                <option value="ta">Tamil</option>
-                <option value="mr">Marathi</option>
-                <option value="bn">Bengali</option>
-                <option value="kn">Kannada</option>
-                <option value="te">Telugu</option>
-                <option value="ur">Urdu</option>
-            </select>
-        </div>
-        <div class="col-sm-4">
-            <label class="fw-bold small">✂️ Length</label>
-            <select id="resLength" class="form-select form-select-sm">
-                <option value="short">Short</option>
-                <option value="medium" selected>Medium</option>
-                <option value="long">Long</option>
-            </select>
-        </div>
-        <div class="col-sm-4">
-            <button class="btn btn-primary btn-sm w-100" onclick="doResummarize()">🔄 Re-Summarize</button>
+        <div id="resResult" class="mt-3" style="display:none;">
+            <h6 class="fw-bold">📝 New Summary:</h6>
+            <p id="resText" class="news-content"></p>
         </div>
     </div>
-    <div id="resResult" class="mt-3" style="display:none;">
-        <h6 class="fw-bold">📝 New Summary:</h6>
-        <p id="resText" class="news-content"></p>
+
+    <!-- FULL NEWS -->
+    <div class="card-box mt-4" data-aos="fade-up">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h5 class="mb-0">📰 Full News</h5>
+            <button class="btn btn-sm btn-outline-secondary no-export" onclick="copyToClipboard('vhFullNews')">📋 Copy</button>
+        </div>
+
+        <p id="vhFullNews" class="news-content">{{ record[2] }}</p>
+
+        <a href="/open_news?url={{ record[3] | urlencode }}&title={{ record[0] | urlencode }}"
+           target="_blank" class="btn btn-primary mt-3 no-export">
+            🌐 Open Original News
+        </a>
     </div>
-</div>
-
-<!-- FULL NEWS -->
-<div class="card-box mt-4" data-aos="fade-up">
-    <div class="d-flex justify-content-between align-items-center mb-2">
-        <h5 class="mb-0">📰 Full News</h5>
-        <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('vhFullNews')">📋 Copy</button>
-    </div>
-
-    <p id="vhFullNews" class="news-content">{{ record[2] }}</p>
-
-    <a href="/open_news?url={{ record[3] | urlencode }}&title={{ record[0] | urlencode }}"
-       target="_blank" class="btn btn-primary mt-3">
-        🌐 Open Original News
-    </a>
 </div>
 
 <script>

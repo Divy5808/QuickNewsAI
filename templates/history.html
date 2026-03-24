@@ -1,146 +1,170 @@
 {% extends "base.html" %}
 {% block content %}
-
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-    <h3 class="fw-bold mb-0">📜 News History</h3>
+    <h3 class="fw-bold mb-0">📜 History & Bookmarks</h3>
     <div class="d-flex gap-2 flex-wrap">
         {% if records %}
         <a href="/history/clear-all" 
-           onclick="return confirm('⚠️ Are you sure you want to delete ALL history? This cannot be undone.')" 
-           class="btn btn-sm btn-outline-danger">
-            🗑 Clear All
-        </a>
+           onclick="return confirm('⚠️ Are you sure you want to delete ALL history?')" 
+           class="btn btn-sm btn-outline-danger">🗑 Clear Hist</a>
         {% endif %}
     </div>
 </div>
 
-<!-- SEARCH & FILTER BAR -->
-{% if records %}
-<div class="card-box mb-4" style="padding:16px 20px;">
-    <div class="row g-2 align-items-center">
-        <div class="col-md-5">
-            <input type="text" class="form-control" id="historySearch" placeholder="🔍 Search by title..." onkeyup="filterHistory()">
-        </div>
-        <div class="col-md-3">
-            <select class="form-select" id="historyLangFilter" onchange="filterHistory()">
-                <option value="">All Languages</option>
-                <option value="EN">English</option>
-                <option value="HI">Hindi</option>
-                <option value="GU">Gujarati</option>
-                <option value="TA">Tamil</option>
-                <option value="MR">Marathi</option>
-                <option value="BN">Bengali</option>
-                <option value="KN">Kannada</option>
-                <option value="TE">Telugu</option>
-                <option value="UR">Urdu</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" id="historyCatFilter" onchange="filterHistory()">
-                <option value="">All Categories</option>
-                <option value="Technology">Technology</option>
-                <option value="Politics">Politics</option>
-                <option value="Sports">Sports</option>
-                <option value="Business">Business</option>
-                <option value="Health">Health</option>
-                <option value="Science">Science</option>
-                <option value="Entertainment">Entertainment</option>
-                <option value="General">General</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select class="form-select" id="historySortOrder" onchange="sortHistory()">
-                <option value="newest">Newest First</option>
-                <option value="oldest">Oldest First</option>
-            </select>
-        </div>
-    </div>
-</div>
-{% endif %}
+<!-- TABS -->
+<ul class="nav nav-pills mb-4 gap-2" id="historyTabs" role="tablist">
+  <li class="nav-item">
+    <button class="nav-link active fw-bold" id="hist-tab" data-bs-toggle="pill" data-bs-target="#tabHist" type="button">📜 Summary History</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link fw-bold" id="book-tab" data-bs-toggle="pill" data-bs-target="#tabBook" type="button">🔖 Saved Bookmarks</button>
+  </li>
+</ul>
 
-<!-- HISTORY ITEMS -->
-<div id="historyList">
-{% if records %}
-    {% for r in records %}
-    <div class="card-box history-card history-item"
-         data-title="{{ r.title|lower }}" 
-         data-lang="{{ r.language|upper }}"
-         data-date="{{ r.date }}"
-         data-category="{{ r.category }}">
-        <div style="flex:1; min-width:0;">
-            <h6 class="fw-bold mb-1" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.title }}</h6>
-            <div class="d-flex gap-2 flex-wrap align-items-center">
-                <span class="badge bg-primary">{{ r.language|upper }}</span>
-                <span class="badge bg-success">{{ r.summary_type }}</span>
-                <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6); font-size:0.72rem;">🏷️ {{ r.category }}</span>
-                <span class="text-muted small">🕒 {{ r.date }}</span>
+<div class="tab-content">
+  <!-- TAB 1: HISTORY -->
+  <div class="tab-pane fade show active" id="tabHist">
+    {% if records %}
+    <div class="card-box mb-4" style="padding:16px 20px;">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <input type="text" class="form-control" id="historySearch" placeholder="🔍 Search summary history..." onkeyup="filterHistory()">
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="historyLangFilter" onchange="filterHistory()">
+                    <option value="">All Languages</option>
+                    <option value="EN">English</option>
+                    <option value="HI">Hindi</option>
+                    <option value="GU">Gujarati</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="historyCatFilter" onchange="filterHistory()">
+                    <option value="">All Categories</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Politics">Politics</option>
+                    <option value="Sports">Sports</option>
+                    <option value="Business">Business</option>
+                    <option value="Health">Health</option>
+                    <option value="Science">Science</option>
+                    <option value="Entertainment">Entertainment</option>
+                    <option value="General">General</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select class="form-select" id="historySortOrder" onchange="sortHistory()">
+                    <option value="newest">Newest First</option>
+                    <option value="oldest">Oldest First</option>
+                </select>
             </div>
         </div>
+    </div>
+    {% endif %}
 
-        <div class="d-flex gap-2 ms-3" style="flex-shrink:0;">
-            <a href="/history/{{ r.id }}" class="btn btn-outline-primary btn-sm">📖 Read</a>
-            <a href="/history/delete/{{ r.id }}"
-               onclick="return confirm('Delete this history?')"
-               class="btn btn-outline-danger btn-sm">🗑</a>
+    <div id="historyList">
+    {% if records %}
+        {% for r in records %}
+        <div class="card-box history-card history-item mb-3"
+             data-title="{{ r.title|lower }}" 
+             data-lang="{{ r.language|upper }}"
+             data-date="{{ r.date }}"
+             data-category="{{ r.category }}">
+            <div style="flex:1; min-width:0;">
+                <h6 class="fw-bold mb-1" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ r.title }}</h6>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                    <span class="badge bg-primary">{{ r.language|upper }}</span>
+                    <span class="badge bg-success">{{ r.summary_type }}</span>
+                    <span class="badge rounded-pill" style="background:linear-gradient(135deg,#6366f1,#8b5cf6); font-size:0.72rem;">🏷️ {{ r.category }}</span>
+                    <span class="text-muted small">🕒 {{ r.date }}</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2 ms-3" style="flex-shrink:0;">
+                <a href="/history/{{ r.id }}" class="btn btn-outline-primary btn-sm">📖 Read</a>
+                <a href="/history/delete/{{ r.id }}" onclick="return confirm('Delete?')" class="btn btn-outline-danger btn-sm">🗑</a>
+            </div>
         </div>
+        {% endfor %}
+    {% else %}
+        <div class="text-center py-5">
+            <div style="font-size:3rem;">📭</div>
+            <h5 class="text-muted">No summaries found.</h5>
+        </div>
+    {% endif %}
     </div>
-    {% endfor %}
-{% else %}
-    <!-- EMPTY STATE -->
-    <div class="text-center py-5">
-        <div style="font-size:4rem; margin-bottom:16px;">📭</div>
-        <h4 class="fw-bold text-muted">No History Yet</h4>
-        <p class="text-muted">You haven't summarized any news articles yet.<br>Head to the <a href="/" class="fw-semibold">Dashboard</a> or <a href="/news" class="fw-semibold">Latest News</a> to get started!</p>
-    </div>
-{% endif %}
-</div>
+  </div>
 
-<!-- NO RESULTS MESSAGE -->
-<div id="noResultsMsg" class="text-center py-4" style="display:none;">
-    <div style="font-size:2.5rem;">🔍</div>
-    <p class="text-muted fw-semibold">No matching history items found.</p>
+  <!-- TAB 2: BOOKMARKS -->
+  <div class="tab-pane fade" id="tabBook">
+    {% if bookmarks %}
+    <div class="row g-3">
+        {% for b in bookmarks %}
+        <div class="col-md-6 col-lg-4" id="bm-card-{{ b.id }}">
+            <div class="card-box h-100 p-3 shadow-sm border-0 d-flex flex-column">
+                <h6 class="fw-bold mb-1 text-truncate" title="{{ b.title }}">{{ b.title }}</h6>
+                <div class="d-flex gap-2 align-items-center mt-2 mb-3">
+                    <span class="badge bg-primary-subtle text-primary border-0 small">{{ b.source_name or 'News' }}</span>
+                    <span class="text-muted small">📅 {{ b.date }}</span>
+                </div>
+                <div class="d-flex gap-2 mt-auto">
+                    <a href="{{ b.url }}" target="_blank" class="btn btn-sm btn-primary flex-grow-1">🌐 Open Original</a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeBookmark({{ b.id }}, '{{ b.url|e }}')">🗑</button>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <div style="font-size:3rem;">🔖</div>
+        <h5 class="text-muted">No bookmarks saved yet.</h5>
+    </div>
+    {% endif %}
+  </div>
 </div>
 
 <script>
+function removeBookmark(bookmarkId, url) {
+    if (!confirm('Remove this bookmark?')) return;
+    fetch('/api/bookmark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: url })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (!data.bookmarked) {
+            const card = document.getElementById('bm-card-' + bookmarkId);
+            if (card) card.remove();
+            showToast('🗑 Bookmark removed.', 'success');
+        }
+    });
+}
+
 function filterHistory() {
     const search = (document.getElementById("historySearch").value || "").toLowerCase();
     const lang = document.getElementById("historyLangFilter").value;
-    const catEl = document.getElementById("historyCatFilter");
-    const cat = catEl ? catEl.value : "";
+    const cat = document.getElementById("historyCatFilter").value;
     const items = document.querySelectorAll(".history-item");
-    let visibleCount = 0;
-
     items.forEach(item => {
         const title = item.dataset.title || "";
         const itemLang = item.dataset.lang || "";
         const itemCat = item.dataset.category || "";
-
-        const matchSearch = !search || title.includes(search);
-        const matchLang = !lang || itemLang === lang;
-        const matchCat = !cat || itemCat === cat;
-
-        if (matchSearch && matchLang && matchCat) {
-            item.style.display = "";
-            visibleCount++;
-        } else {
-            item.style.display = "none";
-        }
+        const mS = !search || title.includes(search);
+        const mL = !lang || itemLang === lang;
+        const mC = !cat || itemCat === cat;
+        item.style.display = (mS && mL && mC) ? "" : "none";
     });
-
-    document.getElementById("noResultsMsg").style.display = visibleCount === 0 && items.length > 0 ? "" : "none";
 }
 
 function sortHistory() {
     const order = document.getElementById("historySortOrder").value;
     const list = document.getElementById("historyList");
     const items = Array.from(list.querySelectorAll(".history-item"));
-
     items.sort((a, b) => {
-        const dateA = new Date(a.dataset.date);
-        const dateB = new Date(b.dataset.date);
-        return order === "newest" ? dateB - dateA : dateA - dateB;
+        const dA = new Date(a.dataset.date);
+        const dB = new Date(b.dataset.date);
+        return order === "newest" ? dB - dA : dA - dB;
     });
-
     items.forEach(item => list.appendChild(item));
 }
 </script>

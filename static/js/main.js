@@ -121,15 +121,12 @@ function toggleDarkMode() {
     const isDark = document.body.classList.toggle("dark-mode");
     document.documentElement.classList.toggle("dark-mode", isDark);
     const icon = document.getElementById("darkIcon");
-    const text = document.getElementById("darkText");
 
     if (isDark) {
         if (icon) icon.innerText = "☀️";
-        if (text) text.innerText = "Light Mode";
         localStorage.setItem("theme", "dark");
     } else {
         if (icon) icon.innerText = "🌙";
-        if (text) text.innerText = "Dark Mode";
         localStorage.setItem("theme", "light");
     }
 }
@@ -194,7 +191,8 @@ function changeSummaryLanguage() {
 // ================================
 // LOAD MORE & CATEGORIES
 // ================================
-let currentPage = 1;
+// Pagination & Categories (using window for template-sync)
+window.nextPageToken = window.nextPageToken || null;
 let currentCategory = "general";
 
 const loadMoreBtn = document.getElementById("loadMoreBtn");
@@ -206,18 +204,17 @@ function renderNewsCard(news) {
     const col = document.createElement("div");
     col.className = "col-md-4 col-lg-3 py-3";
     col.innerHTML = `
-        <div class="news-card h-100 shadow-sm border-0 rounded-4 overflow-hidden" 
+        <div class="news-card h-100" 
              style="cursor:pointer;"
              data-url="${news.url}" 
              data-title="${news.title.replace(/"/g, '&quot;')}">
-            <div class="news-img" style="height:160px; overflow:hidden;">
+            <div class="news-img">
                 <img src="${news.urlToImage || '/static/img/news_placeholder.jpg'}" 
-                     class="w-100 h-100 object-fit-cover transition-all"
                      onerror="handleImgError(this)" 
-                     style="transition: transform 0.3s ease;">
+                     loading="lazy">
             </div>
             <div class="news-body p-3">
-                <h6 class="news-title fw-bold text-dark mb-1" style="font-size:0.95rem; line-height:1.4;">${news.title}</h6>
+                <h6 class="news-title fw-bold mb-1">${news.title}</h6>
                 <div class="news-meta small text-muted">
                     <span>📡 ${news.source?.name || ""}</span>
                 </div>
@@ -236,23 +233,36 @@ document.addEventListener("click", (e) => {
 // Load more button
 if (loadMoreBtn && newsContainer) {
     loadMoreBtn.addEventListener("click", () => {
+        if (!nextPageToken) {
+            loadMoreBtn.innerText = "No more news";
+            loadMoreBtn.disabled = true;
+            return;
+        }
         playClickSound();
-        currentPage += 1;
         loadMoreBtn.innerText = "Loading...";
         loadMoreBtn.disabled = true;
 
-        fetch(`/news?page=${currentPage}&category=${currentCategory}`, {
+        fetch(`/news?page=${nextPageToken}&category=${currentCategory}`, {
             headers: { "X-Requested-With": "XMLHttpRequest" }
         })
         .then(res => res.json())
-        .then(newsList => {
-            if (!newsList || newsList.length === 0) {
+        .then(data => {
+            const newsList = data.results || [];
+            nextPageToken = data.nextPage;
+
+            if (newsList.length === 0) {
                 loadMoreBtn.innerText = "No more news";
                 return;
             }
             newsList.forEach(renderNewsCard);
-            loadMoreBtn.innerText = "Load More News";
-            loadMoreBtn.disabled = false;
+            
+            if (!nextPageToken) {
+                loadMoreBtn.innerText = "No more news";
+                loadMoreBtn.disabled = true;
+            } else {
+                loadMoreBtn.innerText = "Load More News";
+                loadMoreBtn.disabled = false;
+            }
         })
         .catch(() => {
             loadMoreBtn.innerText = "Error, try again";
@@ -265,7 +275,7 @@ if (loadMoreBtn && newsContainer) {
 function changeCategory(category) {
     playClickSound();
     currentCategory = category;
-    currentPage = 1;
+    nextPageToken = null;
 
     document.querySelectorAll(".category-btn").forEach(btn => {
         const isMatch = btn.dataset.category === category;
@@ -279,9 +289,11 @@ function changeCategory(category) {
         headers: { "X-Requested-With": "XMLHttpRequest" }
     })
     .then(res => res.json())
-    .then(newsList => {
+    .then(data => {
         if (newsContainer) {
             newsContainer.innerHTML = "";
+            const newsList = data.results || [];
+            nextPageToken = data.nextPage;
             newsList.forEach(renderNewsCard);
         }
     })
@@ -290,8 +302,13 @@ function changeCategory(category) {
     })
     .finally(() => {
         if (loadMoreBtn) {
-            loadMoreBtn.innerText = "Load More News";
-            loadMoreBtn.disabled = false;
+            if (!nextPageToken) {
+                loadMoreBtn.innerText = "No more news";
+                loadMoreBtn.disabled = true;
+            } else {
+                loadMoreBtn.innerText = "Load More News";
+                loadMoreBtn.disabled = false;
+            }
         }
     });
 }
@@ -311,90 +328,94 @@ function exportToPDF(title, areaId) {
     const el = document.getElementById(areaId);
     if (!el) return showToast("❌ Export area not found", "error");
 
-    if (typeof html2canvas === "undefined") {
-        return showToast("❌ PDF library still loading...", "error");
-    }
+    showToast("⌛ Generating Perfect Multilingual PDF...");
 
-    showToast("⌛ Generating Perfect PDF...");
+    const { jsPDF } = window.jspdf;
+    
+    // 1. Create a hidden "Print Template" that looks BEAUTIFUL
+    const printTemplate = document.createElement('div');
+    printTemplate.style.width = '800px';
+    printTemplate.style.background = '#ffffff';
+    printTemplate.style.color = '#1f2937';
+    printTemplate.style.fontFamily = 'Arial, sans-serif';
+    printTemplate.style.position = 'absolute';
+    printTemplate.style.left = '-9999px';
+    printTemplate.style.top = '0';
+    printTemplate.style.padding = '0';
+    printTemplate.style.zIndex = '-1';
 
-    html2canvas(el, { 
-        scale: 2, 
-        useCORS: true,
-        backgroundColor: "#ffffff",
-        logging: false,
-        onclone: (clonedDoc) => {
-            const clonedArea = clonedDoc.getElementById(areaId);
-            if (!clonedArea) return;
+    const summaryEl = el.querySelector('#dashboardSummary') || el.querySelector('#modalSummary') || el.querySelector('#vhSummary');
+    const newsEl = el.querySelector('#fullNewsBox') || el.querySelector('#modalFullNews') || el.querySelector('#vhFullNews');
+    
+    const summaryText = summaryEl ? summaryEl.innerText : "No summary";
+    const newsText = newsEl ? newsEl.innerText : "No news content";
 
-            // NUCLEAR RESET: Force Pure Black Text and White Background using setProperty (most reliable)
-            clonedArea.style.setProperty('background-color', '#ffffff', 'important');
-            clonedArea.style.setProperty('color', '#000000', 'important');
-            clonedArea.style.setProperty('padding', '20px', 'important');
-
-            const allC = clonedArea.querySelectorAll('*');
-            allC.forEach(child => {
-                child.style.setProperty('color', '#000000', 'important');
-                child.style.setProperty('background-color', 'transparent', 'important');
-                child.style.setProperty('border-color', '#000000', 'important');
-                child.style.setProperty('box-shadow', 'none', 'important');
-                child.style.setProperty('text-shadow', 'none', 'important');
-                child.style.setProperty('opacity', '1', 'important');
-                child.style.setProperty('visibility', 'visible', 'important');
-            });
-
-            // Specific fix for news text and boxes
-            const fn = clonedDoc.getElementById('fullNewsBox');
-            if (fn) {
-                fn.style.setProperty('display', 'block', 'important');
-                fn.style.setProperty('color', '#000000', 'important');
-            }
+    printTemplate.innerHTML = `
+        <div style="background:#2563eb; color:white; padding:40px; text-align:left;">
+            <h1 style="margin:0; font-size:32px;">QuickNewsAI Report</h1>
+            <p style="margin:10px 0 0 0; opacity:0.8; font-size:14px;">Generated on: ${new Date().toLocaleString()}</p>
+        </div>
+        <div style="padding:40px;">
+            <h2 style="font-size:22px; color:#111827; margin-bottom:30px;">${title || 'News Update'}</h2>
             
-            const ds = clonedArea.querySelector('#dashboardSummary') || clonedArea.querySelector('#modalSummary') || clonedArea.querySelector('#vhSummary');
-            if (ds) {
-                ds.style.setProperty('color', '#000000', 'important');
-                ds.style.setProperty('display', 'block', 'important');
-            }
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:25px; margin-bottom:30px;">
+                <h4 style="color:#2563eb; margin:0 0 15px 0; font-size:14px; text-transform:uppercase; letter-spacing:1px;">🧠 AI Summary</h4>
+                <p style="margin:0; font-size:16px; line-height:1.6; color:#374151;">${summaryText}</p>
+            </div>
+            
+            <div style="background:#ffffff; border:1px solid #e2e8f0; border-radius:12px; padding:25px;">
+                <h4 style="color:#2563eb; margin:0 0 15px 0; font-size:14px; text-transform:uppercase; letter-spacing:1px;">📰 Full News</h4>
+                <p style="margin:0; font-size:15px; line-height:1.7; color:#4b5563; white-space:pre-line;">${newsText}</p>
+            </div>
+        </div>
+        <div style="padding:20px; text-align:center; color:#94a3b8; font-size:12px; border-top:1px solid #f1f5f9;">
+            QuickNewsAI — Your Multilingual News Companion
+        </div>
+    `;
 
-            // Hide UI buttons
-            clonedDoc.querySelectorAll('.no-export').forEach(btn => btn.style.display = 'none');
-        }
+    document.body.appendChild(printTemplate);
+
+    // 2. Render Template to Canvas (Perfect for Hindi/Gujarati)
+    html2canvas(printTemplate, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
     }).then(canvas => {
         const imgData = canvas.toDataURL('image/png');
-        const { jsPDF } = window.jspdf;
         const pdf = new jsPDF('p', 'mm', 'a4');
-        
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const imgProps = pdf.getImageProperties(imgData);
-        const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
         
-        let heightLeft = imgHeight;
+        // Handle multipage automatically if needed
+        let heightLeft = pdfHeight;
         let position = 0;
         const pageHeight = pdf.internal.pageSize.getHeight();
 
-        // Header for first page
-        pdf.setFontSize(18);
-        pdf.setTextColor(0, 0, 0); // Pure Black
-        pdf.text("QuickNewsAI Report", 15, 15);
-        pdf.setFontSize(10);
-        pdf.text(`Generated on: ${new Date().toLocaleString()}`, 15, 22);
-        
-        // Add image
-        pdf.addImage(imgData, 'PNG', 0, 30, pdfWidth, imgHeight);
-        heightLeft -= (pageHeight - 30);
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+        heightLeft -= pageHeight;
 
         while (heightLeft >= 0) {
-            position = heightLeft - imgHeight;
+            position = heightLeft - pdfHeight;
             pdf.addPage();
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight);
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
             heightLeft -= pageHeight;
         }
 
-        pdf.save(`${(title || 'news_report').substring(0, 30)}.pdf`);
-        showToast("✅ Perfect PDF Ready!");
+        const fileName = `${(title || 'news_report').substring(0, 30)}.pdf`;
+        pdf.save(fileName);
+        
+        // Preview
+        const blob = pdf.output('blob');
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
 
+        // Cleanup
+        document.body.removeChild(printTemplate);
+        showToast("✅ Multilingual PDF Ready!");
     }).catch(err => {
         console.error("PDF Export Error:", err);
         showToast("❌ PDF Export Failed", "error");
+        if (printTemplate.parentNode) document.body.removeChild(printTemplate);
     });
 }
 
@@ -464,8 +485,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.add("dark-mode");
         document.documentElement.classList.add("dark-mode");
         const icon = document.getElementById("darkIcon");
-        const text = document.getElementById("darkText");
         if (icon) icon.innerText = "☀️";
-        if (text) text.innerText = "Light Mode";
     }
 });

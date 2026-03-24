@@ -58,8 +58,27 @@ def summarize_text(text, summary_length=150):
             early_stopping=True
         )
 
-        summary = tokenizer.decode(output_ids[0], skip_special_tokens=True)
-        return summary
+        summary = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+
+        # 🔥 HEAL: Check for model hallucination / gibberish (common in T5/BART failures)
+        # If output is too short, or has weird characters/tokens, or is highly repetitive
+        bad_patterns = ["(i: )", "(फ ):", "Answer:", "Yes for yes", "no for no"]
+        is_bad = any(p in summary for p in bad_patterns) or len(summary) < 20
+        
+        # Extractive Fallback if model failed but input exists
+        if is_bad and len(text) > 200:
+            print("SUMMARIZER FALLBACK: Model failed to generate valid news.")
+            # Simple extractive fallback: first 2-3 sentences
+            import re
+            sentences = re.split(r'(?<=[.!?])\s+', text)
+            if len(sentences) >= 2:
+                summary = " ".join(sentences[:2])
+                if len(summary) < summary_length // 2:
+                    summary = " ".join(sentences[:3])
+            else:
+                summary = text[:250] + "..."
+
+        return summary.replace("\n", " ").strip()
 
     except Exception as e:
         print("SUMMARY ERROR:", e)

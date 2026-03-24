@@ -33,7 +33,8 @@ def fetch_latest_news(page=None, page_size=10, category="top"):
         "category": category if category in ["business", "entertainment", "health", "science", "sports", "technology", "politics", "world"] else "top"
     }
 
-    if isinstance(page, str) and page.strip() and page != "1":
+    # newsdata.io uses nextPage token, handle string or int (if coming from old logic)
+    if page and str(page).strip() != "1":
         params["page"] = page
 
     try:
@@ -41,21 +42,22 @@ def fetch_latest_news(page=None, page_size=10, category="top"):
 
         if response.status_code != 200:
             print(f"NEWS DATA API ERROR ({response.status_code}): {response.text}")
-            return []
+            return {"results": [], "nextPage": None}
 
         data = response.json()
-
         articles = data.get("results", [])
+        next_page = data.get("nextPage")
 
         for a in articles:
             a['url'] = a.get('link')
             a['urlToImage'] = a.get('image_url')
             a['publishedAt'] = a.get('pubDate')
 
+        result = {"results": articles, "nextPage": next_page}
         # Store in cache
-        _news_cache[cache_key] = (now, articles)
-        return articles
+        _news_cache[cache_key] = (now, result)
+        return result
 
     except Exception as e:
         print(f"Exception fetching news: {e}")
-        return []
+        return {"results": [], "nextPage": None}

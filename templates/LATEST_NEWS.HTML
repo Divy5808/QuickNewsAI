@@ -199,6 +199,9 @@ function filterNewsByKeyword() {
     });
 }
 
+// Initialize pagination token from server on global window
+window.nextPageToken = "{{ next_page or '' }}";
+
 // Bookmark toggle for Latest News cards
 function toggleBookmark(btn) {
     const url = btn.dataset.url;

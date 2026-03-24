@@ -60,14 +60,17 @@ def create_users_table():
     conn.close()
 
 def create_otp_table():
-    """Create the otp_codes table if it doesn't exist."""
+    """Create the unified otp_codes table if it doesn't exist."""
     conn = get_connection()
     cur = conn.cursor()
+    # 🛑 First, drop the redundant 'otp_verification' table to merge it
+    cur.execute("DROP TABLE IF EXISTS otp_verification")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS otp_codes (
             id SERIAL PRIMARY KEY,
             email VARCHAR(200) NOT NULL,
             otp VARCHAR(10) NOT NULL,
+            is_used BOOLEAN DEFAULT FALSE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
@@ -249,9 +252,10 @@ def send_otp(email):
     conn = get_connection()
     cur = conn.cursor()
 
-    # Delete old OTP
+    # Delete old OTPs for this email to keep it clean
     cur.execute("DELETE FROM otp_codes WHERE email=%s", (email,))
-    # Insert new OTP
+    
+    # Insert new OTP (is_used is FALSE by default)
     cur.execute("INSERT INTO otp_codes (email, otp) VALUES (%s, %s)", (email, otp))
 
     conn.commit()
@@ -281,15 +285,20 @@ def verify_email_otp(email, otp, delete_after=True):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT otp FROM otp_codes WHERE email=%s", (email,))
+    # Look for a valid, unused OTP for this email
+    cur.execute("SELECT otp FROM otp_codes WHERE email=%s AND otp=%s AND is_used=FALSE", (email, otp))
     row = cur.fetchone()
 
-    if row and row[0] == otp:
-        # Mark user as verified if they weren't
+    if row:
+        # Mark user as verified
         cur.execute("UPDATE users SET is_verified=TRUE WHERE email=%s", (email,))
         
         if delete_after:
-            cur.execute("DELETE FROM otp_codes WHERE email=%s", (email,))
+            # Instead of deleting, we can mark it as used to track it
+            cur.execute("UPDATE otp_codes SET is_used=TRUE WHERE email=%s AND otp=%s", (email, otp))
+        else:
+            # For reset-password flow, we might keep it temporarily
+            pass
             
         conn.commit()
         cur.close()

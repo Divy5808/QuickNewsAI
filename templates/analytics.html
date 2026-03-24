@@ -2,57 +2,42 @@
 {% block content %}
 
 <style>
-
-  .analytics-title{
-    font-weight:700;
-    letter-spacing:0.5px;
-    color:#ffffff;
+  .analytics-title {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 
-  /* CARD STYLE */
-  .analytics-card{
-    background: linear-gradient(145deg,#020617,#0f172a);
-    border-radius:18px;
-    padding:22px;
-    box-shadow:0 12px 30px rgba(0,0,0,0.4);
-    height:100%;
-    color:white;
-  }
-.analytics-card:hover{
- transform:translateY(-4px);
- transition:0.3s;
-}
-  .chart-box{
-    position:relative;
-    height:320px;
+  .analytics-card {
+    border-radius: 18px;
+    padding: 22px;
+    height: 100%;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
   }
 
-  /* FILTER BOX */
-  .filter-box{
-    background:#0f172a;
-    padding:12px 18px;
-    border-radius:14px;
-    box-shadow:0 6px 18px rgba(0,0,0,0.3);
-    display:inline-flex;
-    align-items:center;
-    gap:10px;
-    color:white;
+  .analytics-card:hover {
+    transform: translateY(-4px);
   }
 
-  .filter-box select{
-    background:#020617;
-    color:white;
-    border:1px solid #1e293b;
+  .chart-box {
+    position: relative;
+    height: 320px;
   }
 
-  .list-group-item a{
-    color:#60a5fa;
+  .filter-box {
+    padding: 10px 18px;
+    border-radius: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
   }
 
-  .list-group-item a:hover{
-    color:#93c5fd;
-  }
-
+  /* List group links */
+  .list-group-item a { color: var(--primary); }
+  .list-group-item a:hover { color: var(--primary-dark); }
 </style>
 
 <!-- ================= HEADER ================= -->
@@ -176,10 +161,14 @@
 
 <script>
 
-  const isDarkMode = document.body.classList.contains("dark-mode");
-  const gridColor = isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.08)";
-  const tickColor = isDarkMode ? "#94a3b8" : "#64748b";
-  const legendColor = isDarkMode ? "#e5e7eb" : "#374151";
+  // Enhanced Theme Detection for Charts
+  const isDarkMode = document.documentElement.classList.contains("dark-mode") || 
+                     document.body.classList.contains("dark-mode") || 
+                     localStorage.getItem("theme") === "dark";
+                     
+  const gridColor = isDarkMode ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)";
+  const tickColor = isDarkMode ? "#cbd5e1" : "#64748b";
+  const legendColor = isDarkMode ? "#f8fafc" : "#334155";
 
   const langLabels = {{ lang_labels| tojson}};
   const langCounts = {{ lang_counts| tojson}};
