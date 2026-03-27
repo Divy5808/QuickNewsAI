@@ -47,12 +47,12 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
 app.secret_key = "quicknews_secret_key"
 
-# Ensure core tables exist on startup
+# Ensure all cloud/local tables exist on startup
+from init_db import init_postgres_db
 try:
-    create_users_table()
-    create_otp_table()
+    init_postgres_db()
 except Exception as e:
-    logger.error(f"DB init error: {e}")
+    logger.error(f"PostgreSQL init failed: {e}")
 
 # ==================================================
 # AUTH GUARD
