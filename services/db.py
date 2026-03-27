@@ -5,6 +5,10 @@ import urllib.parse as urlparse
 # Connect to database using configuration or DATABASE_URL environment variable
 # Use PostgreSQL as requested for the project/thesis
 def get_connection():
+    # Check for ANY environment variables that start with DB_
+    found_db_vars = [k for k in os.environ.keys() if k.startswith("DB_")]
+    print(f"📊 DEBUG: Environment variables found starting with 'DB_': {found_db_vars}")
+
     # Priority 1: Individual Components (Most Reliable for Hugging Face)
     db_host = os.environ.get("DB_HOST")
     db_user = os.environ.get("DB_USER")
@@ -12,8 +16,8 @@ def get_connection():
     db_port = os.environ.get("DB_PORT", "6543")
     db_name = os.environ.get("DB_NAME", "postgres")
 
-    # Diagnostic: Print which vars are found (hide values for security)
-    print(f"🔍 DB Settings Check: HOST={'✅' if db_host else '❌'}, USER={'✅' if db_user else '❌'}, PASS={'✅' if db_pass else '❌'}, PORT={db_port}, NAME={db_name}")
+    # Diagnostic: Print status of required components
+    print(f"🔍 DB Status Check: HOST={'✅' if db_host else '❌'}, USER={'✅' if db_user else '❌'}, PASS={'✅' if db_pass else '❌'}")
 
     if db_host and db_user and db_pass:
         try:
