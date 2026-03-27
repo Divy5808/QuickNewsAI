@@ -1,3 +1,12 @@
+---
+title: QuickNewsAI
+emoji: 📰
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # 📰 QuickNewsAI
 
 QuickNewsAI is an AI-powered web application that extracts, summarizes, and translates news articles from URLs. It helps users quickly understand news content in multiple languages.
