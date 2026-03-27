@@ -7,7 +7,7 @@ import urllib.parse as urlparse
 def get_connection():
     # Check for ANY environment variables that start with DB_
     found_db_vars = [k for k in os.environ.keys() if k.startswith("DB_")]
-    print(f"📊 DEBUG: Environment variables found starting with 'DB_': {found_db_vars}")
+    print(f"📊 DEBUG: Environment variables found starting with 'DB_': {found_db_vars}", flush=True)
 
     # Priority 1: Individual Components (Most Reliable for Hugging Face)
     db_host = os.environ.get("DB_HOST")
@@ -17,7 +17,7 @@ def get_connection():
     db_name = os.environ.get("DB_NAME", "postgres")
 
     # Diagnostic: Print status of required components
-    print(f"🔍 DB Status Check: HOST={'✅' if db_host else '❌'}, USER={'✅' if db_user else '❌'}, PASS={'✅' if db_pass else '❌'}")
+    print(f"🔍 DB Status Check: HOST={'✅' if db_host else '❌'}, USER={'✅' if db_user else '❌'}, PASS={'✅' if db_pass else '❌'}", flush=True)
 
     if db_host and db_user and db_pass:
         try:

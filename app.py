@@ -1,12 +1,14 @@
 import os, uuid, io
-print("🚀 QuickNewsAI is starting up...")
+print("==========================================", flush=True)
+print("🚀 QuickNewsAI is starting up...", flush=True)
+print("==========================================", flush=True)
 
 # 🛡️ EARLY DB INITIALIZATION
 from init_db import init_postgres_db
 try:
     init_postgres_db()
 except Exception as e:
-    print(f"🔥 CRITICAL: PostgreSQL init failed at very start: {e}")
+    print(f"🔥 CRITICAL: PostgreSQL init failed at very start: {e}", flush=True)
 
 from flask import Flask, render_template, request, redirect, jsonify, send_file, session, flash, url_for
 from functools import wraps
