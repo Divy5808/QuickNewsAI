@@ -67,6 +67,20 @@ python app.py
 
 ---
 
+## 🌍 Free Deployment (Hugging Face Spaces)
+
+Hugging Face Spaces is the ideal platform for deploying AI projects using PyTorch and Transformers since it provides up to 16GB of RAM completely free forever. We have included a `Dockerfile` specifically for this.
+
+### Steps to Deploy:
+1. Go to [huggingface.co/spaces](https://huggingface.co/spaces) and create a free account.
+2. Click on **Create new Space**.
+3. Choose a name (e.g., `QuickNewsAI`).
+4. For the **Space SDK**, select **Docker** and choose **Blank**.
+5. Once created, connect your GitHub repository or upload your files there.
+6. Because the `Dockerfile` is already present, Hugging Face will automatically download your models and run the app 24/7 on the internet for free!
+
+---
+
 ## 📸 Screenshots
 
 * Dashboard
