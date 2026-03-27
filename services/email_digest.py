@@ -20,7 +20,7 @@ def ensure_email_preferences_table():
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS email_preferences (
-            pref_id    SERIAL PRIMARY KEY,
+            pref_id    INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id    INTEGER NOT NULL UNIQUE,
             preference VARCHAR(20) DEFAULT 'off',
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
