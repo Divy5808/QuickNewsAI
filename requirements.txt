@@ -12,6 +12,7 @@ requests==2.32.5
 beautifulsoup4==4.14.3
 newspaper3k==0.2.8
 lxml==6.0.2
+lxml_html_clean
 nltk==3.9.2
 pytest==9.0.2
 pytest-cov==7.1.0
