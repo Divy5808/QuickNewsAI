@@ -26,8 +26,7 @@ RUN pip install --user --no-cache-dir -r requirements.txt
 # Create an upload folder if it doesn't exist
 RUN mkdir -p static/uploads
 
-# Initialize the config and database files
-RUN python init_db.py
+# The database will be initialized at runtime in app.py
 
 # Expose port (Hugging Face Spaces uses 7860 by default)
 EXPOSE 7860
