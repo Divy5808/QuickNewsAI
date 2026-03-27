@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: QuickNewsAI
+    env: python
+    buildCommand: "pip install -r requirements.txt && python init_db.py"
+    startCommand: "gunicorn app:app"
+    plan: free
