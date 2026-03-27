@@ -32,4 +32,4 @@ RUN mkdir -p static/uploads
 EXPOSE 7860
 
 # Command to run the application using Gunicorn (binding to port 7860)
-CMD ["gunicorn", "-b", "0.0.0.0:7860", "app:app"]
+CMD ["gunicorn", "-b", "0.0.0.0:7860", "--timeout", "600", "app:app"]

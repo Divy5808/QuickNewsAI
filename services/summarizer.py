@@ -15,11 +15,23 @@ if os.path.exists(LOCAL_MODEL) and os.path.exists(os.path.join(LOCAL_MODEL, "con
 else:
     MODEL_NAME = "Dev5808/QuickNewsAI-Model"
 
-print(f"Loading Summarizer Model: {MODEL_NAME}")
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+# Global model/tokenizer (Lazy Loading)
+tokenizer = None
+model = None
+
+def load_model():
+    global tokenizer, model
+    if tokenizer is not None and model is not None:
+        return tokenizer, model
+        
+    print(f"Loading Summarizer Model: {MODEL_NAME}...")
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+    return tokenizer, model
 
 def summarize_text(text, summary_length=150):
+    t_obj, m_obj = load_model()
+    
     if not text or len(text.strip()) < 200:
         return "Summary not available."
 
@@ -42,7 +54,7 @@ def summarize_text(text, summary_length=150):
         min_len = 60
 
     try:
-        inputs = tokenizer(
+        inputs = t_obj(
             text,
             return_tensors="pt",
             truncation=True,
@@ -55,7 +67,7 @@ def summarize_text(text, summary_length=150):
         actual_min_len = min(min_len, max(10, input_length // 3))
         actual_max_len = min(max_len, max(20, int(input_length * 0.8)))
 
-        output_ids = model.generate(
+        output_ids = m_obj.generate(
             **inputs,
             max_length=actual_max_len,
             min_length=actual_min_len,
@@ -65,7 +77,7 @@ def summarize_text(text, summary_length=150):
             early_stopping=True
         )
 
-        summary = tokenizer.decode(output_ids[0], skip_special_tokens=True).strip()
+        summary = t_obj.decode(output_ids[0], skip_special_tokens=True).strip()
 
         # 🔥 HEAL: Check for model hallucination / gibberish (common in T5/BART failures)
         # If output is too short, or has weird characters/tokens, or is highly repetitive
