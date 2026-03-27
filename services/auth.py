@@ -266,8 +266,8 @@ def send_otp(email):
     msg = MIMEText(f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Email Verification OTP"
     
-    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
-    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     
@@ -343,8 +343,8 @@ def send_reset_otp(email):
     msg = MIMEText(f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Password Reset OTP"
     
-    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
-    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    smtp_user = os.environ.get("SMTP_USER", "")
+    smtp_pass = os.environ.get("SMTP_PASS", "")
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
 
@@ -394,19 +394,21 @@ def send_reset_email(email, token):
     reset_url = f"{base_url}/reset-password/{token}"
     msg = MIMEText(f"To reset your password, visit the following link: {reset_url}\n\nIf you did not make this request, ignore this email.")
     msg["Subject"] = "QuickNewsAI Password Reset Request"
-    msg["From"] = "dalwadidev23@gmail.com"
+    msg["From"] = os.environ.get("SMTP_USER", "")
     msg["To"] = email
 
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        smtp_user = os.environ.get("SMTP_USER", "")
+        smtp_pass = os.environ.get("SMTP_PASS", "")
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
         server.starttls()
-        server.login("dalwadidev23@gmail.com", "hjlkjalemslxdiiw")
+        server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"DEBUG: Reset email sent to {email}")
+        print(f"DEBUG: Reset email sent to {email}", flush=True)
     except Exception as e:
-        print(f"Error sending reset email via smtplib: {e}")
-        print(f"MOCK RESET LINK (FAILED REAL): {reset_url}")
+        print(f"Error sending reset email via smtplib: {e}", flush=True)
+        print(f"MOCK RESET LINK (FAILED REAL): {reset_url}", flush=True)
 
 def reset_password_with_token(token, new_password):
     """Reset password using a reset token."""
