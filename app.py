@@ -752,16 +752,18 @@ def get_qna_pipeline():
         from transformers import pipeline, AutoConfig
         model_path = os.path.join(os.path.dirname(__file__), "qnai_model")
         
-        if os.path.exists(model_path):
-            config = AutoConfig.from_pretrained(model_path)
-            m_type = getattr(config, "model_type", "").lower()
+        if not (os.path.exists(model_path) and os.path.exists(os.path.join(model_path, "config.json"))):
+            model_path = "Dev5808/QuickNewsAI-Model"
             
-            if m_type in ["bart", "t5", "marian"]:
-                QNA_PIPELINE = ("gen", pipeline("text2text-generation", model=model_path))
-                logger.info(f"✅ Generative QnA Pipeline ({m_type}) loaded.")
-            else:
-                QNA_PIPELINE = ("ext", pipeline("question-answering", model=model_path))
-                logger.info(f"✅ Extractive QnA Pipeline loaded.")
+        config = AutoConfig.from_pretrained(model_path)
+        m_type = getattr(config, "model_type", "").lower()
+        
+        if m_type in ["bart", "t5", "marian"]:
+            QNA_PIPELINE = ("gen", pipeline("text2text-generation", model=model_path))
+            logger.info(f"✅ Generative QnA Pipeline ({m_type}) loaded.")
+        else:
+            QNA_PIPELINE = ("ext", pipeline("question-answering", model=model_path))
+            logger.info(f"✅ Extractive QnA Pipeline loaded.")
         return QNA_PIPELINE
     except Exception as e:
         logger.warning(f"Failed to load QnA model: {e}")

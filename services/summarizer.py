@@ -9,11 +9,11 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_MODEL = os.path.join(BASE_DIR, "qnai_model")
 
-# 🔥 Fallback to public model if local trained model is not found (like on HuggingFace)
+# 🔥 Update to use the user's own cloud model if local model isn't found
 if os.path.exists(LOCAL_MODEL) and os.path.exists(os.path.join(LOCAL_MODEL, "config.json")):
     MODEL_NAME = LOCAL_MODEL
 else:
-    MODEL_NAME = "facebook/bart-large-cnn"
+    MODEL_NAME = "Dev5808/QuickNewsAI-Model"
 
 print(f"Loading Summarizer Model: {MODEL_NAME}")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
