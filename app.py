@@ -1,7 +1,16 @@
+import os, uuid, io
+print("🚀 QuickNewsAI is starting up...")
+
+# 🛡️ EARLY DB INITIALIZATION
+from init_db import init_postgres_db
+try:
+    init_postgres_db()
+except Exception as e:
+    print(f"🔥 CRITICAL: PostgreSQL init failed at very start: {e}")
+
 from flask import Flask, render_template, request, redirect, jsonify, send_file, session, flash, url_for
 from functools import wraps
 from werkzeug.utils import secure_filename
-import os, uuid, io
 from datetime import date, timedelta
 
 from gtts import gTTS
@@ -11,29 +20,12 @@ from services.extractor import extract_news_from_url
 from services.summarizer import summarize_text
 from services.translator import translate_summary, translate_full_news
 from services.history import (
-    save_news_safe,
-    get_all_history,
-    get_history_by_id,
-    delete_history_by_id,
-    get_language_stats,
-    get_length_stats,
-    get_sentiment_stats,
-    get_activity_stats,
-    save_translation,
-    save_latest_news_bulk,
-    increase_open_count,
-    # Phase 2
-    toggle_bookmark,
-    get_bookmarks,
-    is_bookmarked,
-    save_rating,
-    get_average_rating,
-    get_user_rating,
-    auto_categorize,
-    get_history_with_categories,
-    # Phase 3
-    save_email_preference,
-    get_email_preference,
+    save_news_safe, get_all_history, get_history_by_id, delete_history_by_id,
+    get_language_stats, get_length_stats, get_sentiment_stats, get_activity_stats,
+    save_translation, save_latest_news_bulk, increase_open_count,
+    toggle_bookmark, get_bookmarks, is_bookmarked, save_rating,
+    get_average_rating, get_user_rating, auto_categorize, get_history_with_categories,
+    save_email_preference, get_email_preference,
 )
 from services.utils import calculate_read_time
 from services.sentiment import analyze_sentiment
@@ -43,16 +35,10 @@ from services.auth import (
 )
 from services.profile import get_user_profile, update_user_profile, delete_user_account
 from services.email_digest import send_digests
+
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
 app.secret_key = "quicknews_secret_key"
-
-# Ensure all cloud/local tables exist on startup
-from init_db import init_postgres_db
-try:
-    init_postgres_db()
-except Exception as e:
-    logger.error(f"PostgreSQL init failed: {e}")
 
 # ==================================================
 # AUTH GUARD
