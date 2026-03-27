@@ -5,10 +5,28 @@ import urllib.parse as urlparse
 # Connect to database using configuration or DATABASE_URL environment variable
 # Use PostgreSQL as requested for the project/thesis
 def get_connection():
-    # Priority 1: DATABASE_URL (Best for Cloud like Hugging Face)
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
-        return psycopg2.connect(db_url)
+        try:
+            # We use urlparse to handle complex credentials
+            url = urlparse.urlparse(db_url)
+            print(f"Connecting to DB at {url.hostname}:{url.port} as {url.username}...")
+            
+            # Reconstruct parameters for psycopg2 to be more stable
+            return psycopg2.connect(
+                dbname=url.path[1:],
+                user=url.username,
+                password=url.password,
+                host=url.hostname,
+                port=url.port or 5432
+            )
+        except Exception as e:
+            print(f"❌ DATABASE_URL Connection Failed: {e}")
+            # Fallback to direct connect if parsing fails
+            try:
+                return psycopg2.connect(db_url)
+            except:
+                raise e
     
     # Priority 2: Standard local configuration (for development)
     db_config = {
