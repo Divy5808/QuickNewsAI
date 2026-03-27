@@ -7,8 +7,15 @@ from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # Using the newly trained local qnai_model
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_NAME = os.path.join(BASE_DIR, "qnai_model")
+LOCAL_MODEL = os.path.join(BASE_DIR, "qnai_model")
 
+# 🔥 Fallback to public model if local trained model is not found (like on HuggingFace)
+if os.path.exists(LOCAL_MODEL) and os.path.exists(os.path.join(LOCAL_MODEL, "config.json")):
+    MODEL_NAME = LOCAL_MODEL
+else:
+    MODEL_NAME = "facebook/bart-large-cnn"
+
+print(f"Loading Summarizer Model: {MODEL_NAME}")
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
 
