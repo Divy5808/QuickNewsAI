@@ -406,7 +406,7 @@ def get_admin_news_history(limit=50, offset=0, search=None):
     params = []
     
     if search:
-        query += " WHERE s.article_title LIKE %s OR u.name LIKE %s "
+        query += " WHERE s.article_title ILIKE %s OR u.name ILIKE %s "
         params.extend([f"%{search}%", f"%{search}%"])
         
     query += " ORDER BY s.created_at DESC LIMIT %s OFFSET %s"
@@ -497,7 +497,7 @@ def _ensure_bookmarks_table():
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS bookmarks (
-            bookmark_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bookmark_id SERIAL PRIMARY KEY,
             user_id     INTEGER NOT NULL,
             title       TEXT,
             url         TEXT NOT NULL,
@@ -576,7 +576,7 @@ def _ensure_ratings_table():
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS ratings (
-            rating_id  INTEGER PRIMARY KEY AUTOINCREMENT,
+            rating_id  SERIAL PRIMARY KEY,
             user_id    INTEGER NOT NULL,
             summary_id INTEGER NOT NULL,
             rating     INTEGER CHECK(rating >= 1 AND rating <= 5),
@@ -613,11 +613,11 @@ def get_average_rating(user_id=None):
     cur = conn.cursor()
     if user_id:
         cur.execute(
-            "SELECT ROUND(AVG(rating), 1) FROM ratings WHERE user_id=%s",
+            "SELECT ROUND(AVG(rating)::numeric, 1) FROM ratings WHERE user_id=%s",
             (user_id,)
         )
     else:
-        cur.execute("SELECT ROUND(AVG(rating), 1) FROM ratings")
+        cur.execute("SELECT ROUND(AVG(rating)::numeric, 1) FROM ratings")
     row = cur.fetchone()
     cur.close()
     conn.close()

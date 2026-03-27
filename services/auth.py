@@ -40,7 +40,7 @@ def create_users_table():
     cur = conn.cursor()
     cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
-            user_id   INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id   SERIAL PRIMARY KEY,
             name      VARCHAR(100) UNIQUE NOT NULL,
             email     VARCHAR(200) UNIQUE NOT NULL,
             password  TEXT NOT NULL,
@@ -67,7 +67,7 @@ def create_otp_table():
     cur.execute("DROP TABLE IF EXISTS otp_verification")
     cur.execute("""
         CREATE TABLE IF NOT EXISTS otp_codes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             email VARCHAR(200) NOT NULL,
             otp VARCHAR(10) NOT NULL,
             is_used BOOLEAN DEFAULT FALSE,

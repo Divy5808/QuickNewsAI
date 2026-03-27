@@ -1,56 +1,36 @@
-import sqlite3
+import psycopg2
 import os
+import urllib.parse as urlparse
 
-# Base directory for the project
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.join(BASE_DIR, "news.db")
-
-class SQLiteCursorWrapper:
-    def __init__(self, cur):
-        self.cur = cur
-
-    def execute(self, query, params=None):
-        # Convert PostgreSQL's %s to SQLite's ?
-        query = query.replace("%s", "?")
-        if params is not None:
-            return self.cur.execute(query, params)
-        return self.cur.execute(query)
-
-    def fetchone(self): return self.cur.fetchone()
-    def fetchall(self): return self.cur.fetchall()
-    def close(self): self.cur.close()
-    
-    @property
-    def rowcount(self): return self.cur.rowcount
-    
-    @property
-    def description(self): return self.cur.description
-
-class SQLiteConnWrapper:
-    def __init__(self, conn):
-        self.conn = conn
-    
-    def cursor(self):
-        return SQLiteCursorWrapper(self.conn.cursor())
-    
-    def commit(self): self.conn.commit()
-    def rollback(self): self.conn.rollback()
-    def close(self): self.conn.close()
-
+# Connect to database using configuration or DATABASE_URL environment variable
+# Use PostgreSQL as requested for the project/thesis
 def get_connection():
-    # Automatically creates news.db if it doesn't exist
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    # Enable WAL mode for better concurrency in SQLite web apps
-    conn.execute("PRAGMA journal_mode=WAL")
-    return SQLiteConnWrapper(conn)
+    # Priority 1: DATABASE_URL (Best for Cloud like Hugging Face)
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        return psycopg2.connect(db_url)
+    
+    # Priority 2: Standard local configuration (for development)
+    db_config = {
+        "dbname": "quicknews",
+        "user": "postgres",
+        "password": "123",
+        "host": "localhost",
+        "port": "5432"
+    }
+    return psycopg2.connect(**db_config)
 
 def get_db_size():
-    if os.path.exists(DB_PATH):
-        size_bytes = os.path.getsize(DB_PATH)
-        if size_bytes < 1024:
-            return f"{size_bytes} B"
-        elif size_bytes < 1024 * 1024:
-            return f"{size_bytes / 1024:.1f} KB"
-        else:
-            return f"{size_bytes / (1024 * 1024):.1f} MB"
-    return "0 KB"
+    """Return the total size of the database in a human-readable format."""
+    try:
+        conn = get_connection()
+        cur = conn.cursor()
+        # Query depends on actual DB name if using config, otherwise it uses the URL's db name
+        cur.execute("SELECT pg_size_pretty(pg_database_size(current_database()))")
+        size = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        return size
+    except Exception as e:
+        print(f"Error getting db size: {e}")
+        return "Unknown"
