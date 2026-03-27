@@ -12,7 +12,10 @@ def get_connection():
     db_port = os.environ.get("DB_PORT", "6543")
     db_name = os.environ.get("DB_NAME", "postgres")
 
-    if all([db_host, db_user, db_pass]):
+    # Diagnostic: Print which vars are found (hide values for security)
+    print(f"🔍 DB Settings Check: HOST={'✅' if db_host else '❌'}, USER={'✅' if db_user else '❌'}, PASS={'✅' if db_pass else '❌'}, PORT={db_port}, NAME={db_name}")
+
+    if db_host and db_user and db_pass:
         try:
             print(f"🔄 Attempting DB connection to {db_host}:{db_port} as {db_user}...")
             return psycopg2.connect(
@@ -25,6 +28,8 @@ def get_connection():
             )
         except Exception as e:
             print(f"❌ Component Connection Failed: {e}")
+    else:
+        print("💡 Skipping Component Connection (missing HOST/USER/PASS). Checking for DATABASE_URL...")
 
     # Priority 2: DATABASE_URL (Fallback)
     db_url = os.environ.get("DATABASE_URL")
