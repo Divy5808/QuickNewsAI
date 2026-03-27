@@ -324,6 +324,144 @@ function copyToClipboard(elementId) {
     });
 }
 
+// ================================
+// 🗣️ TEXT TO SPEECH (TTS)
+// ================================
+let currentAudio = null; 
+
+function speakSummary() {
+    const sEl = document.getElementById("modalSummary") || 
+                document.getElementById("dashboardSummary") || 
+                document.getElementById("vhSummary");
+    
+    if (!sEl) return showToast("❌ Summary not found to speak.", "error");
+
+    const text = sEl.innerText;
+    if (!text || text === "Generating summary..." || text === "🌐 Translating..." || text === "Loading...") {
+        return showToast("⌛ Please wait for the summary to load.", "info");
+    }
+
+    // Stop and cancel any currently playing speech/audio
+    stopSpeech();
+
+    // Detect language from any of the select boxes
+    const langSelect = document.getElementById("modalLang") || document.getElementById("dashboardLang") || document.getElementById("resLang");
+    let langCode = langSelect && langSelect.value ? langSelect.value : "en";
+    const langName = langSelect ? langSelect.options[langSelect.selectedIndex]?.text : "English";
+
+    // Standard BCP-47 tags for native TTS detection
+    const langMap = {
+        'en': 'en-US', 'hi': 'hi-IN', 'gu': 'gu-IN', 'mr': 'mr-IN',
+        'bn': 'bn-IN', 'ta': 'ta-IN', 'te': 'te-IN', 'kn': 'kn-IN', 'ur': 'ur-PK'
+    };
+    const targetLang = langMap[langCode] || 'en-US';
+
+    // 🔍 SEARCH FOR NATIVE VOICE
+    let voices = window.speechSynthesis.getVoices();
+    let voice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase() && v.name.includes("Google"));
+    if (!voice) voice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase() || v.lang.replace('_', '-').toLowerCase() === targetLang.toLowerCase());
+    if (!voice) voice = voices.find(v => v.lang.toLowerCase().startsWith(langCode));
+    if (!voice) voice = voices.find(v => v.name.toLowerCase().includes(langName.toLowerCase()));
+
+    if (voice && (langCode === 'en' || langCode === 'hi')) {
+        // Use Native for English and Hindi as they are usually stable
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.voice = voice;
+        utterance.lang = targetLang;
+        utterance.rate = 0.9;
+        window.speechSynthesis.speak(utterance);
+        showToast(`🔊 Speaking in ${langName} (Native)...`, "success", 2000);
+    } else {
+        // ☁️ CLOUD FALLBACK for Gujarati and other regional languages
+        // This is much more reliable when local voice packs are missing
+        showToast(`☁️ Speaking in ${langName} (Cloud Mode)...`, "info", 2000);
+        
+        // Chunk text into sentences to avoid URL length limits
+        const chunks = text.match(/[^.!?]+[.!?]+/g) || [text];
+        let chunkIdx = 0;
+
+        function playNextChunk() {
+            if (chunkIdx >= chunks.length || !currentAudio) return;
+            const currentText = chunks[chunkIdx++].trim();
+            if (!currentText) { playNextChunk(); return; }
+
+            // USE INTERNAL BACKEND TTS (More stable and avoids CORS/blocking)
+            const url = `/tts?text=${encodeURIComponent(currentText)}&lang=${langCode}`;
+            const audio = new Audio(url);
+            currentAudio = audio; 
+            audio.onended = playNextChunk;
+            audio.onerror = () => {
+                console.error("Cloud TTS Chunk Error");
+                showToast("❌ Speech error. Please check internet.", "error");
+            };
+            audio.play().catch(e => console.warn("Autoplay blocked or failed", e));
+        }
+
+        // Initialize currentAudio so stopSpeech can find it
+        currentAudio = { pause: () => { if (currentAudio && currentAudio.pause) currentAudio.pause(); } }; 
+        playNextChunk();
+    }
+}
+
+// Ensure voices are loaded (some browsers need this event)
+window.speechSynthesis.onvoiceschanged = () => { window.speechSynthesis.getVoices(); };
+
+function stopSpeech() {
+    // Stop native speech
+    window.speechSynthesis.cancel();
+    
+    // Stop cloud audio if playing
+    if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        currentAudio = null;
+    }
+    
+    showToast("⏹ Speech stopped.", "info", 1000);
+}
+
+// ================================
+// 🎙️ VOICE SEARCH (STT)
+// ================================
+function startVoiceSearch() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+        return showToast("❌ Voice search not supported in this browser.", "error");
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-US'; 
+    recognition.interimResults = false;
+
+    const micBtn = document.getElementById("micBtn");
+    if (micBtn) micBtn.innerHTML = "🔴";
+
+    recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        const input = document.getElementById("newsSearchInput");
+        if (input) {
+            input.value = transcript;
+            // Trigger the existing filter function
+            if (typeof filterNewsByKeyword === "function") {
+                filterNewsByKeyword();
+            }
+        }
+        showToast(`🔍 Searching for: "${transcript}"`, "info");
+    };
+
+    recognition.onerror = () => {
+        showToast("❌ Voice recognition error.", "error");
+        if (micBtn) micBtn.innerHTML = "🎙️";
+    };
+
+    recognition.onend = () => {
+        if (micBtn) micBtn.innerHTML = "🎙️";
+    };
+
+    recognition.start();
+    showToast("🎙️ Listening... Speak now.", "info");
+}
+
 function exportToPDF(title, areaId) {
     const el = document.getElementById(areaId);
     if (!el) return showToast("❌ Export area not found", "error");

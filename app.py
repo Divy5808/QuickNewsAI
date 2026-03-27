@@ -449,75 +449,7 @@ def open_news():
     return redirect(url)
 
 
-# ==================================================
-# @app.route("/api/summary")
-# def api_summary():
 
-#     url = request.args.get("url")
-#     lang = request.args.get("lang", "en")
-
-#     lang_map = {
-#         "english": "en",
-#         "gujarati": "gu",
-#         "hindi": "hi"
-#     }
-
-#     lang = lang_map.get(lang.lower(), lang)
-
-#     print("URL:", url)
-#     print("LANG:", lang)
-
-#     data = extract_news_from_url(url)
-
-#     # 🔴 If extractor fails fallback to title/description
-#     if not data or not data.get("text"):
-#         title = data.get("title") if data else "News Article"
-#         text = data.get("description") if data else ""
-
-#         if not text:
-#             return {
-#                 "summary": "⚠️ Unable to extract news content from this website.",
-#                 "full_news": "Please open original article."
-#             }
-
-#         original_text = text
-#     else:
-#         original_text = data["text"]
-#     detect_lang = detect_language(original_text)
-#     print("Detected Language:", detect_lang)
-
-#     # ---- Ensure English Base ----
-#     # ---- Convert to English only if needed ----
-#     if detect_lang != "en":
-#         english_article = translate_full_news(original_text, "en")
-#     else:
-#         english_article = original_text
-
-#     if not english_article or len(english_article.strip()) < 20:
-#         english_article = original_text
-
-#     # ---- Generate Summary ----
-#     try:
-#         english_summary = summarize_text(english_article, 150)
-#     except:
-#         english_summary = english_article[:400]
-
-#     # ---- Translation ----
-#     if lang == "en":
-#         final_news = english_article
-#         final_summary = english_summary
-#     else:
-#         try:
-#             final_news = translate_full_news(english_article, lang)
-#             final_summary = translate_summary(english_summary, lang)
-#         except:
-#             final_news = english_article
-#             final_summary = english_summary
-
-#     return {
-#         "summary": final_summary,
-#         "full_news": final_news
-#     }
 @app.route("/api/summary")
 def api_summary():
     url = request.args.get("url")

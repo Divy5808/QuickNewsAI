@@ -94,6 +94,8 @@ document.addEventListener("DOMContentLoaded", function() {
       <div class="d-flex justify-content-between align-items-center">
         <h5 class="mb-0">🧠 AI Summary</h5>
         <div class="d-flex gap-2 no-export">
+          <button class="btn btn-sm btn-outline-success" onclick="speakSummary()" title="Listen Summary">🔊 Listen</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="stopSpeech()" title="Stop Speech">⏹ Stop</button>
           <button class="btn btn-sm btn-outline-secondary" onclick="copyToClipboard('dashboardSummary')" title="Copy Summary">📋 Copy</button>
           <button class="btn btn-sm btn-outline-primary" onclick="exportToPDF('{{ summary_title|default('News Summary')|e }}', 'exportArea')" title="Download PDF">📤 PDF</button>
         </div>

@@ -19,12 +19,12 @@ class TestSentimentService(unittest.TestCase):
     def test_positive_text(self):
         from services.sentiment import analyze_sentiment
         result = analyze_sentiment("This is a wonderful and amazing day!")
-        self.assertIn(result.lower(), ["positive", "pos", "good", "😊 positive"])
+        self.assertIn(result["label"].lower(), ["positive", "pos", "good", "😊 positive"])
 
     def test_negative_text(self):
         from services.sentiment import analyze_sentiment
         result = analyze_sentiment("This is terrible, horrible, and very bad.")
-        self.assertIn(result.lower(), ["negative", "neg", "bad", "😟 negative"])
+        self.assertIn(result["label"].lower(), ["negative", "neg", "bad", "😟 negative"])
 
     def test_empty_text(self):
         from services.sentiment import analyze_sentiment
@@ -35,7 +35,8 @@ class TestSentimentService(unittest.TestCase):
     def test_returns_string(self):
         from services.sentiment import analyze_sentiment
         result = analyze_sentiment("The stock market rose today.")
-        self.assertIsInstance(result, str)
+        self.assertIsInstance(result, dict)
+        self.assertIn("label", result)
 
 
 # ===========================================================
@@ -143,8 +144,10 @@ class TestNewsAPI(unittest.TestCase):
 
         from services.news_api import fetch_latest_news
         result = fetch_latest_news(category="top")
-        self.assertIsInstance(result, list)
-        self.assertGreater(len(result), 0)
+        self.assertIsInstance(result, dict)
+        self.assertIn("results", result)
+        self.assertIsInstance(result["results"], list)
+        self.assertGreater(len(result["results"]), 0)
 
     @patch("services.news_api.requests.get")
     def test_fetch_normalizes_fields(self, mock_get):
@@ -167,9 +170,10 @@ class TestNewsAPI(unittest.TestCase):
         news_api._news_cache.clear()
 
         result = news_api.fetch_latest_news(category="sports")
-        self.assertIn("url", result[0])
-        self.assertIn("urlToImage", result[0])
-        self.assertEqual(result[0]["url"], "https://example.com/1")
+        items = result.get("results", [])
+        self.assertIn("url", items[0])
+        self.assertIn("urlToImage", items[0])
+        self.assertEqual(items[0]["url"], "https://example.com/1")
 
     @patch("services.news_api.requests.get")
     def test_api_error_returns_empty_list(self, mock_get):
@@ -182,7 +186,7 @@ class TestNewsAPI(unittest.TestCase):
         news_api._news_cache.clear()
 
         result = news_api.fetch_latest_news(category="health")
-        self.assertEqual(result, [])
+        self.assertEqual(result, {"results": [], "nextPage": None})
 
     @patch("services.news_api.requests.get")
     def test_cache_works(self, mock_get):
