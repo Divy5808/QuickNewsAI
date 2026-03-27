@@ -5,6 +5,28 @@ import urllib.parse as urlparse
 # Connect to database using configuration or DATABASE_URL environment variable
 # Use PostgreSQL as requested for the project/thesis
 def get_connection():
+    # Priority 1: Individual Components (Most Reliable for Hugging Face)
+    db_host = os.environ.get("DB_HOST")
+    db_user = os.environ.get("DB_USER")
+    db_pass = os.environ.get("DB_PASS")
+    db_port = os.environ.get("DB_PORT", "6543")
+    db_name = os.environ.get("DB_NAME", "postgres")
+
+    if all([db_host, db_user, db_pass]):
+        try:
+            print(f"🔄 Attempting DB connection to {db_host}:{db_port} as {db_user}...")
+            return psycopg2.connect(
+                host=db_host,
+                port=db_port,
+                user=db_user,
+                password=db_pass,
+                dbname=db_name,
+                connect_timeout=10
+            )
+        except Exception as e:
+            print(f"❌ Component Connection Failed: {e}")
+
+    # Priority 2: DATABASE_URL (Fallback)
     db_url = os.environ.get("DATABASE_URL")
     if db_url:
         try:
@@ -22,20 +44,14 @@ def get_connection():
             )
         except Exception as e:
             print(f"❌ DATABASE_URL Connection Failed: {e}")
-            # Fallback to direct connect if parsing fails
             try:
                 return psycopg2.connect(db_url)
-            except:
-                raise e
+            except Exception as last_e:
+                print(f"❌ Direct URI fallback failed: {last_e}")
+                raise last_e
     
-    # Priority 2: Standard local configuration (for development)
-    db_config = {
-        "dbname": "quicknews",
-        "user": "postgres",
-        "password": "123",
-        "host": "localhost",
-        "port": "5432"
-    }
+    # Priority 3: Local Dev Config
+    db_config = {"dbname": "quicknews", "user": "postgres", "password": "123", "host": "localhost", "port": "5432"}
     return psycopg2.connect(**db_config)
 
 def get_db_size():
