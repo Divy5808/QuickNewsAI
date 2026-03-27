@@ -265,20 +265,27 @@ def send_otp(email):
     # Email content
     msg = MIMEText(f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Email Verification OTP"
-    msg["From"] = "dalwadidev23@gmail.com"
+    
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    
+    msg["From"] = smtp_user
     msg["To"] = email
 
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        # Added 10s timeout to prevent hanging on cloud workers
+        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
         server.starttls()
-        server.login("dalwadidev23@gmail.com", "hjlkjalemslxdiiw")
+        server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"DEBUG: OTP sent to {email}")
+        print(f"DEBUG: OTP sent to {email}", flush=True)
     except Exception as e:
-        print(f"Error sending email via smtplib: {e}")
-        # If real sending fails, we still print it for dev
-        print(f"MOCK OTP (FAILED REAL): {otp}")
+        print(f"Error sending email via smtplib: {e}", flush=True)
+        # If real sending fails, we still print it for dev/logs so they can manually verify
+        print(f"MOCK OTP (FAILED REAL): {otp}", flush=True)
 
 def verify_email_otp(email, otp, delete_after=True):
     """Verify an OTP from the database."""
@@ -335,18 +342,25 @@ def send_reset_otp(email):
 
     msg = MIMEText(f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Password Reset OTP"
-    msg["From"] = "dalwadidev23@gmail.com"
+    
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
+    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+
+    msg["From"] = smtp_user
     msg["To"] = email
 
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
         server.starttls()
-        server.login("dalwadidev23@gmail.com", "hjlkjalemslxdiiw")
+        server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
+        print(f"DEBUG: Reset OTP sent to {email}", flush=True)
     except Exception as e:
-        print(f"Error sending reset OTP: {e}")
-        print(f"MOCK RESET OTP: {otp}")
+        print(f"Error sending reset OTP: {e}", flush=True)
+        print(f"MOCK RESET OTP (FAILED REAL): {otp}", flush=True)
 
 def reset_password_with_otp(email, otp, new_password):
     """Verify OTP and reset password."""
