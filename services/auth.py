@@ -1,4 +1,4 @@
-import uuid, hashlib, random, smtplib
+import uuid, hashlib, random, smtplib, os
 from email.mime.text import MIMEText
 from werkzeug.security import generate_password_hash, check_password_hash
 from services.db import get_connection
