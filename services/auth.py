@@ -56,15 +56,15 @@ def create_users_table():
         )
     """)
     
-    # ✅ CREATE MASTER ADMIN (admin / admin123)
+    # ✅ CREATE MASTER ADMIN (admin / admin)
     try:
         cur.execute("SELECT 1 FROM users WHERE name = 'admin'")
         if not cur.fetchone():
             from werkzeug.security import generate_password_hash
             cur.execute("""
                 INSERT INTO users (name, email, password, role, is_verified)
-                VALUES ('admin', 'admin@quicknews.ai', %s, 'admin', TRUE)
-            """, (generate_password_hash("admin123"),))
+                VALUES ('admin', 'admin@gmail.com', %s, 'admin', TRUE)
+            """, (generate_password_hash("admin"),))
     except Exception as e:
         print(f"Master admin skip: {e}", flush=True)
 
@@ -279,8 +279,8 @@ def send_otp(email):
     msg = MIMEText(f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Email Verification OTP"
     
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
     
@@ -356,8 +356,8 @@ def send_reset_otp(email):
     msg = MIMEText(f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Password Reset OTP"
     
-    smtp_user = os.environ.get("SMTP_USER", "")
-    smtp_pass = os.environ.get("SMTP_PASS", "")
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
     smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
     smtp_port = int(os.environ.get("SMTP_PORT", "587"))
 
@@ -406,8 +406,12 @@ def send_reset_email(email, token):
     base_url = "http://192.168.29.26:5000"
     reset_url = f"{base_url}/reset-password/{token}"
     msg = MIMEText(f"To reset your password, visit the following link: {reset_url}\n\nIf you did not make this request, ignore this email.")
+    # Use correct sender
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    
     msg["Subject"] = "QuickNewsAI Password Reset Request"
-    msg["From"] = os.environ.get("SMTP_USER", "")
+    msg["From"] = smtp_user
     msg["To"] = email
 
     try:
