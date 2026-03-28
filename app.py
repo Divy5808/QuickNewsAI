@@ -37,12 +37,21 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
 app.secret_key = "quicknews_secret_key"
 
-# 🛡️ DB INITIALIZATION
-from init_db import init_postgres_db
-try:
-    init_postgres_db()
-except Exception as e:
-    print(f"🔥 CRITICAL: PostgreSQL init failed: {e}", flush=True)
+# 🚩 DB INITIALIZATION FLAG
+_db_initialized = False
+
+@app.before_request
+def ensure_db_init():
+    global _db_initialized
+    if not _db_initialized:
+        print("🛠️ DEFERRED DB INITIALIZATION STARTING...", flush=True)
+        from init_db import init_postgres_db
+        try:
+            init_postgres_db()
+            _db_initialized = True
+            print("🚀 DEFERRED DB INITIALIZATION SUCCESS!", flush=True)
+        except Exception as e:
+            print(f"🔥 DEFERRED DB INITIALIZATION FAILED: {e}", flush=True)
 
 @app.route("/")
 def index():
