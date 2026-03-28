@@ -55,6 +55,19 @@ def create_users_table():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    
+    # ✅ CREATE MASTER ADMIN (admin / admin123)
+    try:
+        cur.execute("SELECT 1 FROM users WHERE name = 'admin'")
+        if not cur.fetchone():
+            from werkzeug.security import generate_password_hash
+            cur.execute("""
+                INSERT INTO users (name, email, password, role, is_verified)
+                VALUES ('admin', 'admin@quicknews.ai', %s, 'admin', TRUE)
+            """, (generate_password_hash("admin123"),))
+    except Exception as e:
+        print(f"Master admin skip: {e}", flush=True)
+
     conn.commit()
     cur.close()
     conn.close()
