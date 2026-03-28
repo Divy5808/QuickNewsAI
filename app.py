@@ -3,12 +3,7 @@ print("==========================================", flush=True)
 print("🚀 QuickNewsAI is starting up...", flush=True)
 print("==========================================", flush=True)
 
-# 🛡️ EARLY DB INITIALIZATION
-from init_db import init_postgres_db
-try:
-    init_postgres_db()
-except Exception as e:
-    print(f"🔥 CRITICAL: PostgreSQL init failed at very start: {e}", flush=True)
+# 🛡️ DB INITIALIZATION moved below app definition
 
 from flask import Flask, render_template, request, redirect, jsonify, send_file, session, flash, url_for
 from functools import wraps
@@ -41,6 +36,17 @@ from services.email_digest import send_digests
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
 app.secret_key = "quicknews_secret_key"
+
+# 🛡️ DB INITIALIZATION
+from init_db import init_postgres_db
+try:
+    init_postgres_db()
+except Exception as e:
+    print(f"🔥 CRITICAL: PostgreSQL init failed: {e}", flush=True)
+
+@app.route("/")
+def index():
+    return redirect(url_for("login"))
 
 # ==================================================
 # AUTH GUARD
