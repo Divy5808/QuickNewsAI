@@ -1,10 +1,15 @@
 import requests
 from bs4 import BeautifulSoup
-from newspaper import Article
+from newspaper import Article, Config
 
 def extract_news_from_url(url):
     try:
-        article = Article(url)
+        # Configuration to mimic a real browser to avoid 401: Unauthorized
+        config = Config()
+        config.browser_user_agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+        config.request_timeout = 15
+
+        article = Article(url, config=config)
         article.download()
         article.parse()
 
