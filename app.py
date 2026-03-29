@@ -31,7 +31,9 @@ from services.auth import (
     verify_email_otp, send_otp, send_reset_otp, reset_password_with_otp
 )
 from services.profile import get_user_profile, update_user_profile, delete_user_account
-from services.email_digest import send_digests
+from services.email_digest import send_digests, run_periodic_digest
+from apscheduler.schedulers.background import BackgroundScheduler
+import atexit
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'static', 'uploads')
@@ -939,19 +941,38 @@ def analytics():
         avg_rating=get_average_rating(user_id),
     )
 # ==================================================
-# ERROR LOGGING
+# AUTOMATIC SCHEDULER (Daily at 9 AM, Weekly on Sunday 9 AM)
 # ==================================================
-if __name__ == "__main__":
-    logger.info("Starting QuickNewsAI application")
-    
-    # 🕒 Minimal Background Scheduler (optional if not using APScheduler)
-    try:
-        from services.email_digest import send_digests
-        import threading
-        import time
-        import schedule # if it exists... no it doesn't.
-        # Simple hourly check logic can be added later if approved.
-    except:
-        pass
+scheduler = None
 
+def start_scheduler():
+    global scheduler
+    if scheduler:
+        return
+    scheduler = BackgroundScheduler(daemon=True)
+    # Daily Digest at 9:00 AM
+    scheduler.add_job(func=run_periodic_digest, args=['daily'], trigger="cron", hour=9, minute=0)
+    # Weekly Digest on Sunday at 9:30 AM
+    scheduler.add_job(func=run_periodic_digest, args=['weekly'], trigger="cron", day_of_week='sun', hour=9, minute=30)
+    
+    scheduler.start()
+    logger.info("⏰ Background Scheduler started successfully.")
+    # Shut down the scheduler when exiting the app
+    atexit.register(lambda: scheduler.shutdown())
+
+@app.route("/admin/trigger-auto-digest", methods=["POST"])
+@login_required
+@admin_required
+def trigger_auto_digest():
+    """Manual trigger for the periodic background task (updates news + sends)"""
+    from threading import Thread
+    Thread(target=run_periodic_digest, args=["daily"]).start()
+    flash("🚀 Background digest cycle triggered manually (Updates news + Sends daily emails).", "info")
+    return redirect(url_for("admin_panel"))
+
+if __name__ == "__main__":
+    logger.info("Starting QuickNewsAI application locally...")
+    # Prevent double starting in Debug mode (Werkzeug reloader)
+    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+        start_scheduler()
     app.run(debug=True)

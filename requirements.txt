@@ -15,3 +15,4 @@ newspaper3k==0.2.8
 lxml>=5.0.0
 lxml_html_clean
 nltk>=3.8.0
+apscheduler>=3.10.0

@@ -156,37 +156,68 @@ def send_digest_to_user(to_email, to_name, frequency):
     msg["To"] = to_email
     msg.attach(MIMEText(html_body, "html"))
 
-    resend_key = os.environ.get("RESEND_API_KEY")
-    if resend_key:
+    # --- BREVO API (Preferred on Cloud/Hugging Face) ---
+    brevo_key = os.environ.get("BREVO_API_KEY")
+    is_cloud = os.environ.get("SPACE_ID") or os.environ.get("HF_TOKEN")
+
+    if brevo_key and is_cloud:
         try:
             res = requests.post(
-                "https://api.resend.com/emails",
-                headers={
-                    "Authorization": f"Bearer {resend_key}",
-                    "Content-Type": "application/json"
-                },
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": brevo_key, "Content-Type": "application/json"},
                 json={
-                    "from": "QuickNewsAI <onboarding@resend.dev>",
-                    "to": [to_email],
+                    "sender": {"name": "QuickNewsAI", "email": "dalwadidev23@gmail.com"},
+                    "to": [{"email": to_email}],
                     "subject": f"📰 Your QuickNewsAI {frequency.capitalize()} Digest",
-                    "html": html_body
+                    "htmlContent": html_body
                 },
                 timeout=20
             )
-            if res.status_code in [200, 201]:
-                logger.info(f"Digest sent to {to_email} via Resend")
+            if res.status_code in [200, 201, 202]:
+                logger.info(f"Digest sent to {to_email} via Brevo")
                 return True
         except Exception as e:
-            logger.error(f"Error sending digest to {to_email} via Resend: {e}")
+            logger.error(f"Error sending digest to {to_email} via Brevo: {e}")
             return False
 
-    logger.warning("Resend API Key missing. Skipping email.")
-    return False
+    # --- FALLBACK: GMAIL SMTP (Preferred on Local PC) ---
+    try:
+        import smtplib
+        logger.info(f"🏠 Local Mode: Sending Digest via Gmail SMTP to {to_email}")
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+        server.starttls()
+        server.login(SMTP_EMAIL, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        logger.info(f"✅ Digest sent via Gmail on Local PC!")
+        return True
+    except Exception as e:
+        logger.error(f"❌ SMTP Error on Local PC: {e}")
+        return False
+
+
+def run_periodic_digest(frequency):
+    """Background task: Fetch news, save to DB, then send digests."""
+    logger.info(f"⏰ Periodic {frequency} digest task started...")
+    try:
+        from services.news_api import fetch_latest_news
+        from services.history import save_latest_news_bulk
+        # Fetch fresh news so the digest isn't empty or stale
+        data = fetch_latest_news(category="top")
+        save_latest_news_bulk(data.get("results", []))
+        logger.info(f"✅ Periodic news update success for {frequency} digest.")
+    except Exception as e:
+        logger.error(f"❌ Periodic news fetch error: {e}")
+
+    return send_digests(frequency)
 
 
 def send_digests(frequency):
     """Send digests to all subscribers of the given frequency."""
     subscribers = get_digest_subscribers(frequency)
+    if not subscribers:
+        logger.info(f"No subscribers for {frequency} digest. Skipping.")
+        return 0
     sent = 0
     for user_id, name, email in subscribers:
         if send_digest_to_user(email, name, frequency):
