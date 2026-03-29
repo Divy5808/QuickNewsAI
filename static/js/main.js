@@ -152,6 +152,9 @@ function openSummary(url, title) {
     sEl.innerText = "Generating summary...";
     fEl.innerText = "Loading full news...";
 
+    const openBtn = document.getElementById("openOriginalBtn");
+    if (openBtn) openBtn.href = url;
+
     const langSelect = document.getElementById("modalLang");
     if (langSelect) langSelect.value = "";
 
