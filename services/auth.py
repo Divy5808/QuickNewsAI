@@ -1,4 +1,4 @@
-import uuid, hashlib, random, smtplib, os
+import uuid, hashlib, random, os, requests
 from email.mime.text import MIMEText
 from werkzeug.security import generate_password_hash, check_password_hash
 from services.db import get_connection
@@ -279,25 +279,35 @@ def send_otp(email):
     msg = MIMEText(f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Email Verification OTP"
     
-    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
-    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
-    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
-    
-    msg["From"] = smtp_user
-    msg["To"] = email
+    # --- RESEND API (Cloud Friendly) ---
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if resend_key:
+        try:
+            print(f"🔄 Attempting to send OTP via Resend API to {email}...", flush=True)
+            res = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": "QuickNewsAI <onboarding@resend.dev>",
+                    "to": [email],
+                    "subject": "QuickNewsAI Email Verification OTP",
+                    "text": f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes."
+                },
+                timeout=15
+            )
+            if res.status_code in [200, 201]:
+                print(f"✅ OTP sent to {email} via Resend!", flush=True)
+                return
+            else:
+                print(f"⚠️ Resend Failure ({res.status_code}): {res.text}", flush=True)
+        except Exception as e:
+            print(f"❌ Resend API Error: {e}", flush=True)
 
-    try:
-        # Port 465 with SMTP_SSL is more reliable on cloud platforms like HF
-        server = smtplib.SMTP_SSL(smtp_host, 465, timeout=15)
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        print(f"DEBUG: OTP sent to {email} via SSL", flush=True)
-    except Exception as e:
-        print(f"Error sending email via SSL: {e}", flush=True)
-        # If real sending fails, we still print it for dev/logs so they can manually verify
-        print(f"MOCK OTP (FAILED REAL): {otp}", flush=True)
+    # --- FALLBACK: Mock/Debug log ---
+    print(f"MOCK OTP (FAILED REAL): {otp}", flush=True)
 
 def verify_email_otp(email, otp, delete_after=True):
     """Verify an OTP from the database."""
@@ -355,23 +365,30 @@ def send_reset_otp(email):
     msg = MIMEText(f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Password Reset OTP"
     
-    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
-    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
-    smtp_host = os.environ.get("SMTP_HOST", "smtp.gmail.com")
-    smtp_port = int(os.environ.get("SMTP_PORT", "587"))
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if resend_key:
+        try:
+            res = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": "QuickNewsAI <onboarding@resend.dev>",
+                    "to": [email],
+                    "subject": "QuickNewsAI Password Reset OTP",
+                    "text": f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes."
+                },
+                timeout=15
+            )
+            if res.status_code in [200, 201]:
+                print(f"✅ Reset OTP sent to {email} via Resend!", flush=True)
+                return
+        except Exception as e:
+            print(f"❌ Resend Reset API Error: {e}", flush=True)
 
-    msg["From"] = smtp_user
-    msg["To"] = email
-
-    try:
-        server = smtplib.SMTP_SSL(smtp_host, 465, timeout=15)
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        print(f"DEBUG: Reset OTP sent to {email} via SSL", flush=True)
-    except Exception as e:
-        print(f"Error sending reset OTP via SSL: {e}", flush=True)
-        print(f"MOCK RESET OTP (FAILED REAL): {otp}", flush=True)
+    print(f"MOCK RESET OTP (FAILED REAL): {otp}", flush=True)
 
 def reset_password_with_otp(email, otp, new_password):
     """Verify OTP and reset password."""
@@ -412,17 +429,30 @@ def send_reset_email(email, token):
     msg["From"] = smtp_user
     msg["To"] = email
 
-    try:
-        smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
-        smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15)
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-        server.quit()
-        print(f"DEBUG: Reset email sent to {email} via SSL", flush=True)
-    except Exception as e:
-        print(f"Error sending reset email via SSL: {e}", flush=True)
-        print(f"MOCK RESET LINK (FAILED REAL): {reset_url}", flush=True)
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if resend_key:
+        try:
+            res = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": "QuickNewsAI <onboarding@resend.dev>",
+                    "to": [email],
+                    "subject": "QuickNewsAI Password Reset Link",
+                    "text": f"To reset your password, visit the following link: {reset_url}\n\nIf you did not make this request, ignore this email."
+                },
+                timeout=15
+            )
+            if res.status_code in [200, 201]:
+                print(f"✅ Reset link sent to {email} via Resend!", flush=True)
+                return
+        except Exception as e:
+            print(f"❌ Resend API Link Error: {e}", flush=True)
+
+    print(f"MOCK RESET LINK (FAILED REAL): {reset_url}", flush=True)
 
 def reset_password_with_token(token, new_password):
     """Reset password using a reset token."""

@@ -3,7 +3,7 @@ Phase 3: Email Digest Service
 Sends daily/weekly email digests to opted-in users.
 Reuses SMTP credentials from auth.py.
 """
-import smtplib
+import requests, os
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from services.db import get_connection
@@ -156,17 +156,32 @@ def send_digest_to_user(to_email, to_name, frequency):
     msg["To"] = to_email
     msg.attach(MIMEText(html_body, "html"))
 
-    try:
-        # Port 465 with SMTP_SSL is more reliable on cloud platforms like HF
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15)
-        server.login(SMTP_EMAIL, SMTP_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        logger.info(f"Digest sent to {to_email} via SSL")
-        return True
-    except Exception as e:
-        logger.error(f"Error sending digest to {to_email}: {e}")
-        return False
+    resend_key = os.environ.get("RESEND_API_KEY")
+    if resend_key:
+        try:
+            res = requests.post(
+                "https://api.resend.com/emails",
+                headers={
+                    "Authorization": f"Bearer {resend_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "from": "QuickNewsAI <onboarding@resend.dev>",
+                    "to": [to_email],
+                    "subject": f"📰 Your QuickNewsAI {frequency.capitalize()} Digest",
+                    "html": html_body
+                },
+                timeout=20
+            )
+            if res.status_code in [200, 201]:
+                logger.info(f"Digest sent to {to_email} via Resend")
+                return True
+        except Exception as e:
+            logger.error(f"Error sending digest to {to_email} via Resend: {e}")
+            return False
+
+    logger.warning("Resend API Key missing. Skipping email.")
+    return False
 
 
 def send_digests(frequency):
