@@ -308,18 +308,23 @@ def send_otp(email):
     smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
     try:
         import smtplib
-        print(f"🏠 Local/Fallback Mode: Sending via Gmail SMTP...", flush=True)
+        print(f"🏠 Local Mode: Sending via Gmail SMTP ({smtp_user} -> {email})...", flush=True)
+        
+        # Set headers for Gmail SMTP
+        msg["From"] = smtp_user
+        msg["To"] = email
+        
         server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
         server.starttls()
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"✅ OTP sent via Gmail!", flush=True)
+        print(f"✅ OTP sent via Gmail on Local PC!", flush=True)
         return
     except Exception as e:
-        print(f"❌ SMTP Error: {e}", flush=True)
+        print(f"❌ SMTP Error on Local PC: {e}", flush=True)
 
-    # Final debug log for devs
+    # Final debug log
     print(f"MOCK OTP: {otp}", flush=True)
     resend_key = os.environ.get("RESEND_API_KEY")
     if resend_key:
@@ -434,12 +439,15 @@ def send_reset_otp(email):
     smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
     try:
         import smtplib
+        print(f"🏠 Local Mode (Reset OTP): Sending via Gmail SMTP ({smtp_user} -> {email})...", flush=True)
+        msg["From"] = smtp_user
+        msg["To"] = email
         server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
         server.starttls()
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"✅ Reset OTP sent via Gmail!", flush=True)
+        print(f"✅ Reset OTP sent via Gmail on Local PC!", flush=True)
         return
     except Exception:
         pass
