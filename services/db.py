@@ -10,10 +10,11 @@ def resolve_to_ipv4(host):
         # Get all address info for the host
         addr_info = socket.getaddrinfo(host, None, socket.AF_INET)
         if addr_info:
-            # Return the first IPv4 address found
-            return addr_info[0][4][0]
+            res = addr_info[0][4][0]
+            print(f"✅ Resolved {host} to IPv4: {res}", flush=True)
+            return res
     except Exception as e:
-        print(f"⚠️ IPv4 Resolution failed for {host}: {e}")
+        print(f"⚠️ IPv4 Resolution failed for {host}: {e}. Falling back to hostname.", flush=True)
     return host
 
 # Connect to database using configuration or DATABASE_URL environment variable
@@ -48,13 +49,19 @@ def get_connection():
                 sslmode='require'
             )
         except Exception as e:
-            print(f"❌ Component Connection Failed: {e}")
+            print(f"❌ Component Connection Failed: {str(e)}", flush=True)
+            
+            # Specific hint for Supabase Pooler "Tenant or user not found"
+            if "Tenant or user not found" in str(e):
+                print("🚨 CRITICAL: Supabase Pooler requires the username format 'postgres.[project-id]'.")
+                print(f"🔍 Current USER is '{db_user}'. Change it to 'postgres.bwjatqxxgvkkdlkzbtwg' in Settings.")
+            
             if "5432" in str(db_port):
-                print("💡 TIP: If using Supabase, try using port 6543 instead of 5432.")
+                print("💡 TIP: If using Supabase Pooler, ensure port 6543 is used.")
             
             # If components are provided but fail, don't fall back to localhost silently
             if os.environ.get("SPACE_ID") or os.environ.get("HF_TOKEN"):
-                print("🛑 Cloud connection failed. Please verify your DB credentials and ensures port 6543 is used if on HuggingFace.")
+                print("🛑 Cloud connection failed. Please verify your DB credentials on HuggingFace Settings.")
                 raise e
     else:
         print("💡 Skipping Component Connection (missing HOST/USER/PASS). Checking for DATABASE_URL...")
