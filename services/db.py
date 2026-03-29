@@ -2,6 +2,20 @@ import psycopg2
 import os
 import urllib.parse as urlparse
 
+import socket
+
+def resolve_to_ipv4(host):
+    """Force resolution to IPv4 to avoid IPv6 issues on some cloud platforms."""
+    try:
+        # Get all address info for the host
+        addr_info = socket.getaddrinfo(host, None, socket.AF_INET)
+        if addr_info:
+            # Return the first IPv4 address found
+            return addr_info[0][4][0]
+    except Exception as e:
+        print(f"⚠️ IPv4 Resolution failed for {host}: {e}")
+    return host
+
 # Connect to database using configuration or DATABASE_URL environment variable
 # Use PostgreSQL as requested for the project/thesis
 def get_connection():
@@ -20,18 +34,28 @@ def get_connection():
     print(f"🔍 DB Status Check: HOST={'✅' if db_host else '❌'}, USER={'✅' if db_user else '❌'}, PASS={'✅' if db_pass else '❌'}", flush=True)
 
     if db_host and db_user and db_pass:
+        # Force IPv4 resolution to avoid "Network is unreachable" issues on some IPv6-resolving DNS
+        ipv4_host = resolve_to_ipv4(db_host)
         try:
-            print(f"🔄 Attempting DB connection to {db_host}:{db_port} as {db_user}...")
+            print(f"🔄 Attempting DB connection to {db_host} ({ipv4_host}):{db_port} as {db_user} (SSL Require)...")
             return psycopg2.connect(
-                host=db_host,
+                host=ipv4_host,
                 port=db_port,
                 user=db_user,
                 password=db_pass,
                 dbname=db_name,
-                connect_timeout=10
+                connect_timeout=15,
+                sslmode='require'
             )
         except Exception as e:
             print(f"❌ Component Connection Failed: {e}")
+            if "5432" in str(db_port):
+                print("💡 TIP: If using Supabase, try using port 6543 instead of 5432.")
+            
+            # If components are provided but fail, don't fall back to localhost silently
+            if os.environ.get("SPACE_ID") or os.environ.get("HF_TOKEN"):
+                print("🛑 Cloud connection failed. Please verify your DB credentials and ensures port 6543 is used if on HuggingFace.")
+                raise e
     else:
         print("💡 Skipping Component Connection (missing HOST/USER/PASS). Checking for DATABASE_URL...")
 
@@ -49,19 +73,32 @@ def get_connection():
                 user=url.username,
                 password=url.password,
                 host=url.hostname,
-                port=url.port or 5432
+                port=url.port or 5432,
+                sslmode='require'
             )
         except Exception as e:
             print(f"❌ DATABASE_URL Connection Failed: {e}")
             try:
-                return psycopg2.connect(db_url)
+                # Add sslmode if not present in URI
+                if "sslmode=" not in db_url:
+                    sep = "&" if "?" in db_url else "?"
+                    db_url_ssl = f"{db_url}{sep}sslmode=require"
+                else:
+                    db_url_ssl = db_url
+                    
+                return psycopg2.connect(db_url_ssl)
             except Exception as last_e:
                 print(f"❌ Direct URI fallback failed: {last_e}")
-                raise last_e
+                if os.environ.get("SPACE_ID"):
+                    raise last_e
     
-    # Priority 3: Local Dev Config
-    db_config = {"dbname": "quicknews", "user": "postgres", "password": "123", "host": "localhost", "port": "5432"}
-    return psycopg2.connect(**db_config)
+    # Priority 3: Local Dev Config (ONLY if not on Spaces)
+    if not os.environ.get("SPACE_ID"):
+        print("🏠 Running locally, using default local config...")
+        db_config = {"dbname": "quicknews", "user": "postgres", "password": "123", "host": "localhost", "port": "5432"}
+        return psycopg2.connect(**db_config)
+    else:
+        raise Exception("❌ Database configuration missing or invalid for cloud environment (Spaces).")
 
 def get_db_size():
     """Return the total size of the database in a human-readable format."""

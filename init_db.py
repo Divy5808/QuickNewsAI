@@ -148,6 +148,7 @@ def init_postgres_db():
         print("✅ All PostgreSQL tables initialized on Cloud Database!")
     except Exception as e:
         print(f"❌ Error initializing Cloud Database: {e}")
+        raise e
 
 if __name__ == "__main__":
     init_postgres_db()
