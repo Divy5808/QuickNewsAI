@@ -3,7 +3,8 @@
 # ==========================================
 
 import os
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+# No top-level heavy imports to keep startup ultra-fast
+# from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 # Using the newly trained local qnai_model
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -25,8 +26,16 @@ def load_model():
         return tokenizer, model
         
     print(f"Loading Summarizer Model: {MODEL_NAME}...")
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+    try:
+        from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+        import torch
+        
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+    except Exception as e:
+        print(f"❌ CRITICAL MODEL LOAD ERROR: {e}")
+        raise e
+        
     return tokenizer, model
 
 def summarize_text(text, summary_length=150):

@@ -970,9 +970,16 @@ def trigger_auto_digest():
     flash("🚀 Background digest cycle triggered manually (Updates news + Sends daily emails).", "info")
     return redirect(url_for("admin_panel"))
 
+# ✅ AUTO-START SCHEDULER IN PRODUCTION (Gunicorn)
+# On Hugging Face, gunicorn loads 'app'. We need the scheduler to start then.
+# Locally, it starts when __name__ == "__main__" or when reloader is ready.
+if __name__ == "app" or os.environ.get('GUNICORN_CMD_ARGS'):
+    print("🚀 GUNICORN DETECTED - STARTING BACKGROUND TASKS...", flush=True)
+    start_scheduler()
+
 if __name__ == "__main__":
     logger.info("Starting QuickNewsAI application locally...")
     # Prevent double starting in Debug mode (Werkzeug reloader)
-    if not app.debug or os.environ.get('WERKZEUG_RUN_MAIN') == 'true':
+    if os.environ.get('WERKZEUG_RUN_MAIN') == 'true' or not app.debug:
         start_scheduler()
-    app.run(debug=True)
+    app.run(debug=True, port=7860)  # Use port 7860 locally for better parity with HF
