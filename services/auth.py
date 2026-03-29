@@ -279,17 +279,16 @@ def send_otp(email):
     msg = MIMEText(f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Email Verification OTP"
     
-    # --- BREVO API (Unrestricted Cloud Delivery) ---
+    # --- BREVO API (Preferred on Cloud/Hugging Face) ---
     brevo_key = os.environ.get("BREVO_API_KEY")
-    if brevo_key:
+    is_cloud = os.environ.get("SPACE_ID") or os.environ.get("HF_TOKEN")
+
+    if brevo_key and is_cloud:
         try:
-            print(f"🔄 Attempting to send OTP via Brevo API to {email}...", flush=True)
+            print(f"🔄 Sending OTP via Brevo API to {email}...", flush=True)
             res = requests.post(
                 "https://api.brevo.com/v3/smtp/email",
-                headers={
-                    "api-key": brevo_key,
-                    "Content-Type": "application/json"
-                },
+                headers={"api-key": brevo_key, "Content-Type": "application/json"},
                 json={
                     "sender": {"name": "QuickNewsAI", "email": "dalwadidev23@gmail.com"},
                     "to": [{"email": email}],
@@ -299,14 +298,29 @@ def send_otp(email):
                 timeout=15
             )
             if res.status_code in [200, 201, 202]:
-                print(f"✅ OTP sent to {email} via Brevo!", flush=True)
+                print(f"✅ OTP sent via Brevo!", flush=True)
                 return
-            else:
-                print(f"⚠️ Brevo Failure ({res.status_code}): {res.text}", flush=True)
         except Exception as e:
-            print(f"❌ Brevo API Error: {e}", flush=True)
+            print(f"❌ Brevo Error: {e}", flush=True)
 
-    # --- RESEND API (Backup) ---
+    # --- FALLBACK: Gmail SMTP (Preferred on Local PC) ---
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    try:
+        import smtplib
+        print(f"🏠 Local/Fallback Mode: Sending via Gmail SMTP...", flush=True)
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        print(f"✅ OTP sent via Gmail!", flush=True)
+        return
+    except Exception as e:
+        print(f"❌ SMTP Error: {e}", flush=True)
+
+    # Final debug log for devs
+    print(f"MOCK OTP: {otp}", flush=True)
     resend_key = os.environ.get("RESEND_API_KEY")
     if resend_key:
         try:
@@ -392,9 +406,11 @@ def send_reset_otp(email):
     msg = MIMEText(f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Password Reset OTP"
     
-    # --- BREVO API ---
+    # --- BREVO (Preferred on Cloud) ---
     brevo_key = os.environ.get("BREVO_API_KEY")
-    if brevo_key:
+    is_cloud = os.environ.get("SPACE_ID") or os.environ.get("HF_TOKEN")
+
+    if brevo_key and is_cloud:
         try:
             res = requests.post(
                 "https://api.brevo.com/v3/smtp/email",
@@ -413,30 +429,22 @@ def send_reset_otp(email):
         except Exception as e:
             print(f"❌ Brevo Reset Error: {e}", flush=True)
 
-    resend_key = os.environ.get("RESEND_API_KEY")
-    if resend_key:
-        try:
-            res = requests.post(
-                "https://api.resend.com/emails",
-                headers={
-                    "Authorization": f"Bearer {resend_key}",
-                    "Content-Type": "application/json"
-                },
-                json={
-                    "from": "QuickNewsAI <onboarding@resend.dev>",
-                    "to": [email],
-                    "subject": "QuickNewsAI Password Reset OTP",
-                    "text": f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes."
-                },
-                timeout=15
-            )
-            if res.status_code in [200, 201]:
-                print(f"✅ Reset OTP sent to {email} via Resend!", flush=True)
-                return
-        except Exception as e:
-            print(f"❌ Resend Reset API Error: {e}", flush=True)
+    # --- SMTP (Preferred on Local PC) ---
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    try:
+        import smtplib
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        print(f"✅ Reset OTP sent via Gmail!", flush=True)
+        return
+    except Exception:
+        pass
 
-    print(f"MOCK RESET OTP (FAILED REAL): {otp}", flush=True)
+    print(f"MOCK RESET OTP: {otp}", flush=True)
 
 def reset_password_with_otp(email, otp, new_password):
     """Verify OTP and reset password."""
@@ -477,30 +485,45 @@ def send_reset_email(email, token):
     msg["From"] = smtp_user
     msg["To"] = email
 
-    resend_key = os.environ.get("RESEND_API_KEY")
-    if resend_key:
+    # --- BREVO (Preferred on Cloud) ---
+    brevo_key = os.environ.get("BREVO_API_KEY")
+    is_cloud = os.environ.get("SPACE_ID") or os.environ.get("HF_TOKEN")
+
+    if brevo_key and is_cloud:
         try:
             res = requests.post(
-                "https://api.resend.com/emails",
-                headers={
-                    "Authorization": f"Bearer {resend_key}",
-                    "Content-Type": "application/json"
-                },
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": brevo_key, "Content-Type": "application/json"},
                 json={
-                    "from": "QuickNewsAI <onboarding@resend.dev>",
-                    "to": [email],
+                    "sender": {"name": "QuickNewsAI", "email": "dalwadidev23@gmail.com"},
+                    "to": [{"email": email}],
                     "subject": "QuickNewsAI Password Reset Link",
-                    "text": f"To reset your password, visit the following link: {reset_url}\n\nIf you did not make this request, ignore this email."
+                    "textContent": f"To reset your password, visit the following link: {reset_url}"
                 },
                 timeout=15
             )
-            if res.status_code in [200, 201]:
-                print(f"✅ Reset link sent to {email} via Resend!", flush=True)
+            if res.status_code in [200, 201, 202]:
+                print(f"✅ Reset link sent via Brevo!", flush=True)
                 return
         except Exception as e:
-            print(f"❌ Resend API Link Error: {e}", flush=True)
+            print(f"❌ Brevo Link Error: {e}", flush=True)
 
-    print(f"MOCK RESET LINK (FAILED REAL): {reset_url}", flush=True)
+    # --- SMTP (Preferred on Local PC) ---
+    smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+    smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+    try:
+        import smtplib
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+        server.quit()
+        print(f"✅ Reset Link sent via Gmail!", flush=True)
+        return
+    except Exception:
+        pass
+
+    print(f"MOCK RESET LINK: {reset_url}", flush=True)
 
 def reset_password_with_token(token, new_password):
     """Reset password using a reset token."""
