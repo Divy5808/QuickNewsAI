@@ -18,11 +18,12 @@ ENV HOME=/home/user \
 # Set the working directory to the user's home directory
 WORKDIR $HOME/app
 
-# Copy the current directory contents into the container setting the owner to the user
-COPY --chown=user . $HOME/app
-
-# Copy requirements and install
+# Copy only requirements first to leverage Docker cache
+COPY --chown=user requirements.txt $HOME/app/requirements.txt
 RUN pip install --user --no-cache-dir -r requirements.txt
+
+# Copy the rest of the files (this layer will be fast if only code changes)
+COPY --chown=user . $HOME/app
 
 # Create an upload folder if it doesn't exist
 RUN mkdir -p static/uploads
