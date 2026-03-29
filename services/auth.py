@@ -288,15 +288,14 @@ def send_otp(email):
     msg["To"] = email
 
     try:
-        # Added 10s timeout to prevent hanging on cloud workers
-        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
-        server.starttls()
+        # Port 465 with SMTP_SSL is more reliable on cloud platforms like HF
+        server = smtplib.SMTP_SSL(smtp_host, 465, timeout=15)
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"DEBUG: OTP sent to {email}", flush=True)
+        print(f"DEBUG: OTP sent to {email} via SSL", flush=True)
     except Exception as e:
-        print(f"Error sending email via smtplib: {e}", flush=True)
+        print(f"Error sending email via SSL: {e}", flush=True)
         # If real sending fails, we still print it for dev/logs so they can manually verify
         print(f"MOCK OTP (FAILED REAL): {otp}", flush=True)
 
@@ -365,14 +364,13 @@ def send_reset_otp(email):
     msg["To"] = email
 
     try:
-        server = smtplib.SMTP(smtp_host, smtp_port, timeout=10)
-        server.starttls()
+        server = smtplib.SMTP_SSL(smtp_host, 465, timeout=15)
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"DEBUG: Reset OTP sent to {email}", flush=True)
+        print(f"DEBUG: Reset OTP sent to {email} via SSL", flush=True)
     except Exception as e:
-        print(f"Error sending reset OTP: {e}", flush=True)
+        print(f"Error sending reset OTP via SSL: {e}", flush=True)
         print(f"MOCK RESET OTP (FAILED REAL): {otp}", flush=True)
 
 def reset_password_with_otp(email, otp, new_password):
@@ -415,16 +413,15 @@ def send_reset_email(email, token):
     msg["To"] = email
 
     try:
-        smtp_user = os.environ.get("SMTP_USER", "")
-        smtp_pass = os.environ.get("SMTP_PASS", "")
-        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=10)
-        server.starttls()
+        smtp_user = os.environ.get("SMTP_USER", "dalwadidev23@gmail.com")
+        smtp_pass = os.environ.get("SMTP_PASS", "hjlkjalemslxdiiw")
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15)
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
-        print(f"DEBUG: Reset email sent to {email}", flush=True)
+        print(f"DEBUG: Reset email sent to {email} via SSL", flush=True)
     except Exception as e:
-        print(f"Error sending reset email via smtplib: {e}", flush=True)
+        print(f"Error sending reset email via SSL: {e}", flush=True)
         print(f"MOCK RESET LINK (FAILED REAL): {reset_url}", flush=True)
 
 def reset_password_with_token(token, new_password):

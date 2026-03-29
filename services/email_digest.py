@@ -157,12 +157,12 @@ def send_digest_to_user(to_email, to_name, frequency):
     msg.attach(MIMEText(html_body, "html"))
 
     try:
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
+        # Port 465 with SMTP_SSL is more reliable on cloud platforms like HF
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15)
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
         server.send_message(msg)
         server.quit()
-        logger.info(f"Digest sent to {to_email}")
+        logger.info(f"Digest sent to {to_email} via SSL")
         return True
     except Exception as e:
         logger.error(f"Error sending digest to {to_email}: {e}")
