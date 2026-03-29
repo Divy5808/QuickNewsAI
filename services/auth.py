@@ -279,7 +279,34 @@ def send_otp(email):
     msg = MIMEText(f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Email Verification OTP"
     
-    # --- RESEND API (Cloud Friendly) ---
+    # --- BREVO API (Unrestricted Cloud Delivery) ---
+    brevo_key = os.environ.get("BREVO_API_KEY")
+    if brevo_key:
+        try:
+            print(f"🔄 Attempting to send OTP via Brevo API to {email}...", flush=True)
+            res = requests.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={
+                    "api-key": brevo_key,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "sender": {"name": "QuickNewsAI", "email": "dalwadidev23@gmail.com"},
+                    "to": [{"email": email}],
+                    "subject": "QuickNewsAI Email Verification OTP",
+                    "textContent": f"Your QuickNewsAI OTP is: {otp}\nValid for 5 minutes."
+                },
+                timeout=15
+            )
+            if res.status_code in [200, 201, 202]:
+                print(f"✅ OTP sent to {email} via Brevo!", flush=True)
+                return
+            else:
+                print(f"⚠️ Brevo Failure ({res.status_code}): {res.text}", flush=True)
+        except Exception as e:
+            print(f"❌ Brevo API Error: {e}", flush=True)
+
+    # --- RESEND API (Backup) ---
     resend_key = os.environ.get("RESEND_API_KEY")
     if resend_key:
         try:
@@ -365,6 +392,27 @@ def send_reset_otp(email):
     msg = MIMEText(f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes.")
     msg["Subject"] = "QuickNewsAI Password Reset OTP"
     
+    # --- BREVO API ---
+    brevo_key = os.environ.get("BREVO_API_KEY")
+    if brevo_key:
+        try:
+            res = requests.post(
+                "https://api.brevo.com/v3/smtp/email",
+                headers={"api-key": brevo_key, "Content-Type": "application/json"},
+                json={
+                    "sender": {"name": "QuickNewsAI", "email": "dalwadidev23@gmail.com"},
+                    "to": [{"email": email}],
+                    "subject": "QuickNewsAI Password Reset OTP",
+                    "textContent": f"Your QuickNewsAI Password Reset OTP is: {otp}\nValid for 5 minutes."
+                },
+                timeout=15
+            )
+            if res.status_code in [200, 201, 202]:
+                print(f"✅ Reset OTP sent via Brevo!", flush=True)
+                return
+        except Exception as e:
+            print(f"❌ Brevo Reset Error: {e}", flush=True)
+
     resend_key = os.environ.get("RESEND_API_KEY")
     if resend_key:
         try:
