@@ -32,6 +32,7 @@ def load_model():
         
         tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
         model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+        print(f"✅ Summarizer Model loaded successfully from: {MODEL_NAME}")
     except Exception as e:
         print(f"❌ CRITICAL MODEL LOAD ERROR: {e}")
         raise e

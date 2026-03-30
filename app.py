@@ -765,10 +765,10 @@ def get_qna_pipeline():
         
         if m_type in ["bart", "t5", "marian"]:
             QNA_PIPELINE = ("gen", pipeline("text2text-generation", model=model_path))
-            logger.info(f"✅ Generative QnA Pipeline ({m_type}) loaded.")
+            logger.info(f"✅ Generative QnA Pipeline ({m_type}) loaded from LOCAL qnai_model.")
         else:
             QNA_PIPELINE = ("ext", pipeline("question-answering", model=model_path))
-            logger.info(f"✅ Extractive QnA Pipeline loaded.")
+            logger.info(f"✅ Extractive QnA Pipeline loaded from LOCAL qnai_model.")
         return QNA_PIPELINE
     except Exception as e:
         logger.warning(f"Failed to load QnA model: {e}")
