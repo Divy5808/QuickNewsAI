@@ -63,6 +63,55 @@ def get_email_preference(user_id):
     return row[0] if row else "off"
 
 
+# ================= DIGEST LOGS (Persistence) =================
+def ensure_digest_logs_table():
+    """Create digest_logs table to track background execution patterns."""
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS digest_logs (
+            log_id     SERIAL PRIMARY KEY,
+            frequency  VARCHAR(20),
+            sent_count INTEGER,
+            ran_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def log_digest_execution(frequency, sent_count):
+    """Log a successful digest run to the DB."""
+    ensure_digest_logs_table()
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        "INSERT INTO digest_logs (frequency, sent_count) VALUES (%s, %s)",
+        (frequency, sent_count)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def was_digest_sent_today(frequency):
+    """Check if a digest of this frequency has already been sent today."""
+    ensure_digest_logs_table()
+    conn = get_connection()
+    cur = conn.cursor()
+    # Check for entries today (UTC/Server time)
+    cur.execute("""
+        SELECT COUNT(*) FROM digest_logs 
+        WHERE frequency = %s 
+          AND ran_at >= CURRENT_DATE
+    """, (frequency,))
+    count = cur.fetchone()[0]
+    cur.close()
+    conn.close()
+    return count > 0
+
+
 def get_digest_subscribers(frequency):
     """Return list of (user_id, name, email) for users subscribed to given frequency."""
     ensure_email_preferences_table()
@@ -209,7 +258,10 @@ def run_periodic_digest(frequency):
     except Exception as e:
         logger.error(f"❌ Periodic news fetch error: {e}")
 
-    return send_digests(frequency)
+    sent = send_digests(frequency)
+    if sent >= 0:
+        log_digest_execution(frequency, sent)
+    return sent
 
 
 def send_digests(frequency):

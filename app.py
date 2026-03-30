@@ -950,15 +950,57 @@ def start_scheduler():
     if scheduler:
         return
     scheduler = BackgroundScheduler(daemon=True)
-    # Daily Digest at 9:00 AM
-    scheduler.add_job(func=run_periodic_digest, args=['daily'], trigger="cron", hour=9, minute=0)
-    # Weekly Digest on Sunday at 9:30 AM
-    scheduler.add_job(func=run_periodic_digest, args=['weekly'], trigger="cron", day_of_week='sun', hour=9, minute=30)
+    # Daily Digest at 11:30 AM IST (06:00 UTC)
+    scheduler.add_job(func=run_periodic_digest, args=['daily'], trigger="cron", hour=6, minute=0)
+    # Weekly Digest on Sunday at 11:30 AM IST (06:00 UTC)
+    scheduler.add_job(func=run_periodic_digest, args=['weekly'], trigger="cron", day_of_week='sun', hour=6, minute=0)
     
     scheduler.start()
     logger.info("⏰ Background Scheduler started successfully.")
+
+    # 🚀 NEW: Catch-up Logic for missed digests on startup (e.g. if PC was off at 9 AM)
+    from services.email_digest import was_digest_sent_today
+    from datetime import datetime
+    try:
+        now = datetime.now()
+        # ⚠️ NOTE: Server time is UTC. 11:30 AM IST = 6:00 AM UTC.
+        if now.hour >= 6:
+            if not was_digest_sent_today("daily"):
+                logger.info("🕒 Startup check: Daily digest was missed at 11:30 AM IST. Triggering catch-up...")
+                from threading import Thread
+                Thread(target=run_periodic_digest, args=["daily"]).start()
+    except Exception as e:
+        logger.warning(f"Failed to check for missed digest on startup: {e}")
+
     # Shut down the scheduler when exiting the app
     atexit.register(lambda: scheduler.shutdown())
+
+# ==================================================
+# ✅ EXTERNAL CRON TRIGGER (SECURITY TOKEN PROTECTED)
+# ==================================================
+@app.route("/api/cron/trigger", methods=["GET"])
+def cron_trigger():
+    """
+    Endpoint for external wake-up services (like GitHub Actions or cron-job.org).
+    Wakes up the HF Space and triggers the news update + email cycle.
+    Usage: /api/cron/trigger?token=YOUR_CRON_SECRET
+    """
+    token = request.args.get("token")
+    # Default fallback for local testing, but should be set in environment for production
+    secret = os.environ.get("CRON_SECRET", "quicknews_123")
+    
+    if not token or token != secret:
+        logger.warning(f"🚫 Unauthorized CRON trigger attempt from {request.remote_addr}")
+        return jsonify({"status": "error", "message": "Unauthorized"}), 403
+
+    logger.info("⚡ External CRON trigger received. Starting digest cycle...")
+    from threading import Thread
+    Thread(target=run_periodic_digest, args=["daily"]).start()
+    
+    return jsonify({
+        "status": "success", 
+        "message": "Daily digest cycle triggered successfully via cron."
+    })
 
 @app.route("/admin/trigger-auto-digest", methods=["POST"])
 @login_required

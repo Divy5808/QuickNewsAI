@@ -1,0 +1,19 @@
+name: Wake Up QuickNewsAI
+# This workflow runs automatically at 10:30 AM IST (05:00 AM UTC).
+# It wakes up the server and triggers the daily digest even if no one is visiting.
+
+on:
+  schedule:
+    # 06:00 UTC = 11:30 AM IST
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+
+jobs:
+  ping_server:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit the Wake-up URL
+        run: |
+          # Replace 'YOUR_HF_SPACE_URL' with your real HuggingFace Space URL
+          # E.g. https://divy5808-quicknewsai.hf.space
+          curl -X GET "https://divy5808-quicknewsai.hf.space/api/cron/trigger?token=quicknews_123"
