@@ -5,3 +5,6 @@ __pycache__
 news.db
 test_out.txt
 clean_test_results.txt
+
+# 🔥 Exclude model from general COPY to avoid redundant layer hashing
+qnai_model/
