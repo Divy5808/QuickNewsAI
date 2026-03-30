@@ -4,8 +4,8 @@ name: Wake Up QuickNewsAI
 
 on:
   schedule:
-    # 07:30 UTC = 01:00 PM IST
-    - cron: '30 7 * * *'
+    # 03:30 UTC = 09:00 AM IST
+    - cron: '30 3 * * *'
   workflow_dispatch: # Allow manual trigger from GitHub UI
 
 jobs:
