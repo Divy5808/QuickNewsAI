@@ -13,7 +13,10 @@ USER user
 # Set home to the user's home directory
 ENV HOME=/home/user \
 	PATH=/home/user/.local/bin:$PATH \
-	PYTHONUNBUFFERED=1
+	PYTHONUNBUFFERED=1 \
+    PIP_DEFAULT_TIMEOUT=1000 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
 
 # Set the working directory to the user's home directory
 WORKDIR $HOME/app
