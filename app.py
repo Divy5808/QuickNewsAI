@@ -757,8 +757,8 @@ def get_qna_pipeline():
         from transformers import pipeline, AutoConfig
         model_path = os.path.join(os.path.dirname(__file__), "qnai_model")
         
-        if not (os.path.exists(model_path) and os.path.exists(os.path.join(model_path, "config.json"))):
-            model_path = "Dev5808/QuickNewsAI-Model"
+        # 🚀 Use the Hub model directly for production
+        model_path = "Dev5808/QuickNewsAI-Model"
             
         config = AutoConfig.from_pretrained(model_path)
         m_type = getattr(config, "model_type", "").lower()

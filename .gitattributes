@@ -1,0 +1,2 @@
+qnai_model/*.safetensors filter=lfs diff=lfs merge=lfs -text
+qnai_model/*.bin filter=lfs diff=lfs merge=lfs -text

@@ -1,7 +1,14 @@
+qnai_model/
+training_data.csv
+train_model.py
+pytest.ini
+tests/
+.git
+.github
+.gitignore
 .venv
-.pytest_cache
 __pycache__
 *.pyc
 news.db
-test_out.txt
-clean_test_results.txt
+static/uploads/*
+!static/uploads/.gitkeep

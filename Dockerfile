@@ -25,11 +25,7 @@ WORKDIR $HOME/app
 COPY --chown=user requirements.txt $HOME/app/requirements.txt
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-# Copy heavy model files FIRST to ensure they are cached (since they rarely change)
-COPY --chown=user qnai_model/ $HOME/app/qnai_model/
-
-# Copy the remaining project files. Since the model is already in a previous layer,
-# changes to app.py will no longer trigger a re-copy of the 1.2GB model.
+# Copy the rest of the project (Model will be downloaded from Hub at runtime)
 COPY --chown=user . $HOME/app
 
 # Create an upload folder if it doesn't exist

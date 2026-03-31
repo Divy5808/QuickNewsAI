@@ -11,10 +11,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LOCAL_MODEL = os.path.join(BASE_DIR, "qnai_model")
 
 # 🔥 Update to use the user's own cloud model if local model isn't found
-if os.path.exists(LOCAL_MODEL) and os.path.exists(os.path.join(LOCAL_MODEL, "config.json")):
-    MODEL_NAME = LOCAL_MODEL
-else:
-    MODEL_NAME = "Dev5808/QuickNewsAI-Model"
+# 🚀 Production Model (Hugging Face Hub)
+MODEL_NAME = "Dev5808/QuickNewsAI-Model"
 
 # Global model/tokenizer (Lazy Loading)
 tokenizer = None
