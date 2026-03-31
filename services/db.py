@@ -39,7 +39,7 @@ def get_connection():
         ipv4_host = resolve_to_ipv4(db_host)
         try:
             print(f"🔄 Attempting DB connection to {db_host} ({ipv4_host}):{db_port} as {db_user} (SSL Require)...")
-            return psycopg2.connect(
+            conn = psycopg2.connect(
                 host=ipv4_host,
                 port=db_port,
                 user=db_user,
@@ -48,6 +48,10 @@ def get_connection():
                 connect_timeout=15,
                 sslmode='require'
             )
+            # 🌍 Set session timezone to IST (Indian Standard Time)
+            with conn.cursor() as cur:
+                cur.execute("SET timezone = 'Asia/Kolkata';")
+            return conn
         except Exception as e:
             print(f"❌ Component Connection Failed: {str(e)}", flush=True)
             
@@ -75,7 +79,7 @@ def get_connection():
             print(f"Connecting to DB at {url.hostname}:{url.port} as {url.username}...")
             
             # Reconstruct parameters for psycopg2 to be more stable
-            return psycopg2.connect(
+            conn = psycopg2.connect(
                 dbname=url.path[1:],
                 user=url.username,
                 password=url.password,
@@ -83,6 +87,10 @@ def get_connection():
                 port=url.port or 5432,
                 sslmode='require'
             )
+            # 🌍 Set session timezone to IST
+            with conn.cursor() as cur:
+                cur.execute("SET timezone = 'Asia/Kolkata';")
+            return conn
         except Exception as e:
             print(f"❌ DATABASE_URL Connection Failed: {e}")
             try:
@@ -93,7 +101,11 @@ def get_connection():
                 else:
                     db_url_ssl = db_url
                     
-                return psycopg2.connect(db_url_ssl)
+                conn = psycopg2.connect(db_url_ssl)
+                # 🌍 Set session timezone to IST
+                with conn.cursor() as cur:
+                    cur.execute("SET timezone = 'Asia/Kolkata';")
+                return conn
             except Exception as last_e:
                 print(f"❌ Direct URI fallback failed: {last_e}")
                 if os.environ.get("SPACE_ID"):
@@ -103,7 +115,11 @@ def get_connection():
     if not os.environ.get("SPACE_ID"):
         print("🏠 Running locally, using default local config...")
         db_config = {"dbname": "quicknews", "user": "postgres", "password": "123", "host": "localhost", "port": "5432"}
-        return psycopg2.connect(**db_config)
+        conn = psycopg2.connect(**db_config)
+        # 🌍 Set session timezone to IST
+        with conn.cursor() as cur:
+            cur.execute("SET timezone = 'Asia/Kolkata';")
+        return conn
     else:
         raise Exception("❌ Database configuration missing or invalid for cloud environment (Spaces).")
 

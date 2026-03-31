@@ -950,10 +950,10 @@ def start_scheduler():
     if scheduler:
         return
     scheduler = BackgroundScheduler(daemon=True)
-    # Daily Digest at 09:00 AM IST (03:30 UTC)
-    scheduler.add_job(func=run_periodic_digest, args=['daily'], trigger="cron", hour=3, minute=30)
-    # Weekly Digest on Sunday at 09:00 AM IST (03:30 UTC)
-    scheduler.add_job(func=run_periodic_digest, args=['weekly'], trigger="cron", day_of_week='sun', hour=3, minute=30)
+    # Daily Digest at 10:00 AM IST (04:30 UTC)
+    scheduler.add_job(func=run_periodic_digest, args=['daily'], trigger="cron", hour=4, minute=30)
+    # Weekly Digest on Sunday at 10:00 AM IST (04:30 UTC)
+    scheduler.add_job(func=run_periodic_digest, args=['weekly'], trigger="cron", day_of_week='sun', hour=4, minute=30)
     
     scheduler.start()
     logger.info("⏰ Background Scheduler started successfully.")
@@ -963,10 +963,10 @@ def start_scheduler():
     from datetime import datetime
     try:
         now = datetime.now()
-        # ⚠️ NOTE: Server time is UTC. 09:00 AM IST = 03:30 AM UTC.
-        if now.hour > 3 or (now.hour == 3 and now.minute >= 30):
+        # ⚠️ NOTE: Server time is UTC. 10:00 AM IST = 04:30 AM UTC.
+        if now.hour > 4 or (now.hour == 4 and now.minute >= 30):
             if not was_digest_sent_today("daily"):
-                logger.info("🕒 Startup check: Daily digest was missed at 09:00 AM IST. Triggering catch-up...")
+                logger.info("🕒 Startup check: Daily digest was missed at 10:00 AM IST. Triggering catch-up...")
                 from threading import Thread
                 Thread(target=run_periodic_digest, args=["daily"]).start()
     except Exception as e:
